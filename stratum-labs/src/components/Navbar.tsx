@@ -5,10 +5,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
 
 const navLinks = [
-  { name: "Products", href: "#products" },
+  { name: "Solutions", href: "#solutions" },
   { name: "Pricing", href: "#pricing" },
+  { name: "Case Studies", href: "#" },
   { name: "Docs", href: "#" },
-  { name: "Blog", href: "#" },
 ];
 
 export default function Navbar() {
@@ -66,14 +66,14 @@ export default function Navbar() {
                 href="#"
                 className="text-sm text-gray-400 hover:text-foreground transition-colors duration-200"
               >
-                Sign In
+                Book a Call
               </a>
               <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-accent hover:bg-accent-bright transition-colors duration-200 flex items-center gap-2"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="px-5 py-2.5 rounded-full text-sm font-bold text-black bg-white hover:shadow-[0_0_30px_rgba(255,255,255,0.4)] transition-all duration-200 flex items-center gap-2"
               >
-                Request Access
+                Get Your Bot
                 <ArrowRight className="w-3.5 h-3.5" />
               </motion.button>
             </div>
@@ -119,10 +119,10 @@ export default function Navbar() {
                   href="#"
                   className="block text-lg text-gray-400 hover:text-foreground transition-colors duration-200"
                 >
-                  Sign In
+                  Book a Call
                 </a>
-                <button className="w-full py-3 rounded-lg text-sm font-medium text-white bg-accent hover:bg-accent-bright transition-colors duration-200">
-                  Request Access
+                <button className="w-full py-3 rounded-full text-sm font-bold text-black bg-white hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all duration-200">
+                  Get Your Bot
                 </button>
               </div>
             </div>

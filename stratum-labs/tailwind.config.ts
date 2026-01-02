@@ -36,6 +36,8 @@ const config: Config = {
         "glow": "glow 2s ease-in-out infinite alternate",
         "float": "float 6s ease-in-out infinite",
         "hover-reveal": "hoverReveal 0.3s ease-out forwards",
+        "gradient-x": "gradient-x 3s ease infinite",
+        "shimmer": "shimmer 2s ease-in-out infinite",
       },
       keyframes: {
         glow: {
@@ -50,6 +52,17 @@ const config: Config = {
           "0%": { opacity: "0", transform: "scale(0.95)" },
           "100%": { opacity: "1", transform: "scale(1)" },
         },
+        "gradient-x": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
+        shimmer: {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(200%)" },
+        },
+      },
+      backgroundSize: {
+        "200%": "200% 200%",
       },
     },
   },

@@ -1,151 +1,110 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Shield, Eye, Database, Terminal, Cpu, Network } from "lucide-react";
-import { useState } from "react";
+import { Shield, Eye, Database, Check } from "lucide-react";
 
-const modules = [
+const products = [
   {
     id: "sentinel",
-    title: "MODULE A: SENTINEL",
-    subtitle: "Threat Detection Engine",
-    description: "Real-time FUD analysis and anti-raid protection network.",
+    title: "Sentinel AI",
+    badge: "Most Popular",
+    price: "$299",
+    description: "Anti-FUD & Raid Protection System.",
+    features: ["Real-time Sentiment Analysis", "Auto-Mod Actions", "Raid Alerts"],
     icon: Shield,
-    terminalCode: [
-      "> SCANNING MEMPOOL...",
-      "> THREAT DETECTED: 0",
-      "> SOCIAL SENTIMENT: 98% POSITIVE",
-      "> STATUS: ACTIVE"
-    ],
-    colSpan: "md:col-span-2",
+    gradient: "from-purple-500/20 to-blue-500/20",
+    glow: "group-hover:shadow-[0_0_50px_rgba(168,85,247,0.2)]",
   },
   {
-    id: "overseer",
-    title: "MODULE B: OVERSEER",
-    subtitle: "On-Chain Analytics",
-    description: "Institutional-grade whale tracking and wallet taxonomy.",
+    id: "whalewatch",
+    title: "WhaleWatch Bot",
+    badge: "Essential",
+    price: "$150",
+    description: "Track top holder movements instantly.",
+    features: ["Wallet Labeling", "Buy/Sell Alerts", "Telegram Integration"],
     icon: Eye,
-    terminalCode: [
-      "> TRACKING WALLET: 0x7a...4f2",
-      "> BALANCE: 4,500 ETH",
-      "> ALERT: ACCUMULATION DETECTED",
-      "> SIGNAL: BULLISH"
-    ],
-    colSpan: "md:col-span-1",
+    gradient: "from-blue-500/20 to-cyan-500/20",
+    glow: "group-hover:shadow-[0_0_50px_rgba(59,130,246,0.2)]",
   },
   {
-    id: "architect",
-    title: "MODULE C: ARCHITECT",
-    subtitle: "Governance Automation",
-    description: "Self-executing proposals and treasury management.",
+    id: "holdergate",
+    title: "HolderGate",
+    badge: "Security",
+    price: "$150",
+    description: "Token-gated access for Discord.",
+    features: ["Zero-Knowledge Proofs", "Role Management", "Multi-Chain Support"],
     icon: Database,
-    terminalCode: [
-      "> PROPOSAL_ID: 1042",
-      "> QUORUM: REACHED",
-      "> EXECUTING TIMELOCK...",
-      "> SUCCESS"
-    ],
-    colSpan: "md:col-span-1",
+    gradient: "from-emerald-500/20 to-teal-500/20",
+    glow: "group-hover:shadow-[0_0_50px_rgba(16,185,129,0.2)]",
   },
-  {
-    id: "neural-net",
-    title: "MODULE D: NEURAL",
-    subtitle: "Predictive Modeling",
-    description: "AI forecasting for liquidity needs and bridge volume.",
-    icon: Network,
-    terminalCode: [
-      "> TRAINING EPOCH 400",
-      "> ACCURACY: 99.4%",
-      "> PREDICTING BRIDGE SPIKE",
-      "> REBALANCING..."
-    ],
-    colSpan: "md:col-span-2",
-  }
 ];
 
-function TerminalView({ lines }: { lines: string[] }) {
-  return (
-    <div className="absolute inset-0 bg-black/90 p-6 font-mono text-xs text-green-500 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none rounded-2xl border border-green-500/20 shadow-[0_0_30px_rgba(34,197,94,0.1)]">
-      <div className="flex gap-2 mb-2 border-b border-green-500/20 pb-2">
-        <div className="w-2 h-2 rounded-full bg-red-500/50" />
-        <div className="w-2 h-2 rounded-full bg-yellow-500/50" />
-        <div className="w-2 h-2 rounded-full bg-green-500/50" />
-      </div>
-      {lines.map((line, i) => (
-        <motion.div
-          key={i}
-          initial={{ opacity: 0, x: -10 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          transition={{ delay: i * 0.1 }}
-        >
-          {line}
-        </motion.div>
-      ))}
-      <motion.div
-        animate={{ opacity: [0, 1] }}
-        transition={{ repeat: Infinity, duration: 0.8 }}
-        className="w-2 h-4 bg-green-500"
-      />
-    </div>
-  );
-}
-
-function BentoCard({ module }: { module: typeof modules[0] }) {
-  const Icon = module.icon;
+function ProductCard({ product }: { product: typeof products[0] }) {
+  const Icon = product.icon;
 
   return (
     <motion.div
-      whileHover={{ y: -5 }}
-      className={`relative group overflow-hidden rounded-2xl bg-white/[0.02] border border-white/10 hover:border-cobalt/50 transition-colors duration-500 h-[300px] ${module.colSpan}`}
+      whileHover={{ y: -8 }}
+      className={`glass-card relative rounded-2xl p-8 overflow-hidden group ${product.glow}`}
     >
-      <div className="absolute inset-0 bg-gradient-to-br from-cobalt/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      {/* Background Gradient */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${product.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
 
-      {/* Normal Content */}
-      <div className="relative z-10 p-8 h-full flex flex-col justify-between group-hover:opacity-10 transition-opacity duration-300">
-        <div>
-          <div className="mb-6 flex items-start justify-between">
-            <div className="p-3 rounded-lg bg-white/5 border border-white/10 text-cobalt">
-              <Icon size={24} />
-            </div>
-            <span className="text-[10px] font-mono text-gray-500 tracking-widest uppercase">{module.title}</span>
+      <div className="relative z-10 flex flex-col h-full">
+        <div className="flex justify-between items-start mb-6">
+          <div className="p-3 rounded-xl bg-white/5 ring-1 ring-white/10 group-hover:bg-white/10 transition-colors">
+            <Icon size={24} className="text-white" />
           </div>
-          <h3 className="text-2xl font-bold text-white mb-2">{module.subtitle}</h3>
-          <p className="text-gray-400 group-hover:text-gray-300 transition-colors">{module.description}</p>
+          {product.badge && (
+            <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/10 text-white border border-white/10">
+              {product.badge}
+            </span>
+          )}
         </div>
-        <div className="flex items-center gap-2 text-xs font-mono text-gray-600">
-          <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-          SYSTEM ONLINE
+
+        <h3 className="text-2xl font-bold text-white mb-2">{product.title}</h3>
+        <p className="text-gray-400 text-sm mb-6">{product.description}</p>
+
+        <div className="mt-auto pt-6 border-t border-white/10">
+          <div className="flex items-baseline gap-1 mb-6">
+            <span className="text-3xl font-bold text-white">{product.price}</span>
+            <span className="text-sm text-gray-500">/ setup</span>
+          </div>
+
+          <ul className="space-y-3 mb-8">
+            {product.features.map((feature) => (
+              <li key={feature} className="flex items-center gap-2 text-sm text-gray-300">
+                <Check size={14} className="text-blue-400" />
+                {feature}
+              </li>
+            ))}
+          </ul>
+
+          <button className="w-full py-3 rounded-xl bg-white text-black font-bold text-sm hover:scale-[1.02] transition-transform shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:shadow-[0_0_30px_rgba(255,255,255,0.4)]">
+            Deploy Now
+          </button>
         </div>
       </div>
-
-      {/* Hover Terminal Reveal */}
-      <TerminalView lines={module.terminalCode} />
     </motion.div>
   );
 }
 
 export default function BentoGrid() {
   return (
-    <section className="py-20 px-6 bg-obsidian">
+    <section className="py-24 px-6 relative z-10">
       <div className="max-w-7xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="mb-16 border-l-2 border-cobalt pl-6"
-        >
-          <h2 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
-            Adaptive Intelligence Modules
+        <div className="text-center mb-20">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            Production-Ready Modules
           </h2>
-          <p className="text-gray-400 max-w-xl text-lg">
-            A modular architecture designed for the unpredictable nature of Web3.
-            Select your stack.
+          <p className="text-xl text-gray-400">
+            Choose your infrastructure. We handle the deployment.
           </p>
-        </motion.div>
+        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {modules.map((module) => (
-            <BentoCard key={module.id} module={module} />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {products.map((product) => (
+            <ProductCard key={product.id} product={product} />
           ))}
         </div>
       </div>
