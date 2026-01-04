@@ -94,10 +94,10 @@ export default function CTA() {
         >
           Questions?{" "}
           <a
-            href="mailto:team@stratumlabs.com"
+            href="mailto:team@kyvernlabs.com"
             className="text-gray-400 hover:text-accent transition-colors duration-200"
           >
-            team@stratumlabs.com
+            team@kyvernlabs.com
           </a>
         </motion.p>
       </div>
