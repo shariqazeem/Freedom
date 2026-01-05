@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ArrowUpRight, Mail, MapPin } from "lucide-react";
+import Image from "next/image";
 
 const socialLinks = [
   { name: "Twitter", href: "https://twitter.com/kyvernlabs" },
@@ -105,9 +106,18 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             {/* Logo & Copyright */}
             <div className="flex items-center gap-6">
-              <span className="text-sm font-bold text-white tracking-tight">
-                KYVERN LABS
-              </span>
+              <div className="flex items-center gap-2">
+                <Image
+                  src="/kyvernlabs_logo.jpg"
+                  alt="Kyvern Labs"
+                  width={24}
+                  height={24}
+                  className="rounded-sm"
+                />
+                <span className="text-sm font-bold text-white tracking-tight">
+                  KYVERN LABS
+                </span>
+              </div>
               <span className="text-xs text-gray-600">
                 &copy; {new Date().getFullYear()} All rights reserved
               </span>

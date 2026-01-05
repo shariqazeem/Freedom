@@ -3,11 +3,11 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowUpRight } from "lucide-react";
+import Image from "next/image";
 
 const navLinks = [
   { name: "Work", href: "#work" },
   { name: "Services", href: "#services" },
-  { name: "About", href: "#about" },
   { name: "Contact", href: "#contact" },
 ];
 
@@ -38,7 +38,15 @@ export default function Navbar() {
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <a href="/" className="flex items-center gap-3">
+            <a href="/" className="flex items-center gap-2.5">
+              <Image
+                src="/kyvernlabs_logo.jpg"
+                alt="Kyvern Labs"
+                width={32}
+                height={32}
+                className="rounded-sm"
+                priority
+              />
               <span className="text-sm font-bold text-white tracking-tight">
                 KYVERN LABS
               </span>
@@ -72,6 +80,7 @@ export default function Navbar() {
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="md:hidden p-2 text-white"
+              aria-label="Toggle menu"
             >
               {isMobileMenuOpen ? (
                 <X className="w-5 h-5" />

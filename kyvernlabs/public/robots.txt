@@ -1,0 +1,16 @@
+# Robots.txt for Kyvern Labs
+# https://kyvernlabs.com
+
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: https://kyvernlabs.com/sitemap.xml
+
+# Crawl-delay (optional, for politeness)
+Crawl-delay: 1
+
+# Block common bot paths that don't apply
+Disallow: /api/
+Disallow: /_next/static/
+Disallow: /*.json$
