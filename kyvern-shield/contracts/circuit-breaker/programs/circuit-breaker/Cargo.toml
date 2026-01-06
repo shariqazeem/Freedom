@@ -1,0 +1,22 @@
+[package]
+name = "circuit-breaker"
+version = "0.1.0"
+description = "Kyvern Shield Circuit Breaker - On-chain agent protection"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/kyvernlabs/kyvern-shield"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "circuit_breaker"
+
+[features]
+no-entrypoint = []
+no-idl = []
+no-log-ix-name = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = "0.30.1"
+anchor-spl = "0.30.1"

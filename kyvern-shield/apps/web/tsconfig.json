@@ -1,0 +1,27 @@
+{
+  "extends": "@kyvern/typescript-config/nextjs.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ],
+      "@kyvern/types": [
+        "../../packages/types/src"
+      ],
+      "@kyvern/ui": [
+        "../../packages/ui/src"
+      ]
+    },
+    "allowJs": true
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
