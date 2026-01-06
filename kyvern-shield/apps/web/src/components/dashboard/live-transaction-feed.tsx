@@ -1,126 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Shield, Ban, AlertTriangle, Activity, Zap } from "lucide-react";
+import {
+  shieldAPI,
+  type AnalysisResult,
+  type SourceDetectionResult,
+  type HeuristicResult,
+  type LLMAnalysisResult,
+  type AnalysisDecision,
+  type SourceDetectionFlag,
+} from "@/lib/api-client";
 
 // =============================================================================
-// TYPESCRIPT INTERFACES - Matching Backend AnalysisResult
+// TYPESCRIPT INTERFACES - Re-export from api-client for convenience
 // =============================================================================
 
-export type AnalysisDecision = "allow" | "block";
-
-export type SourceDetectionFlag =
-  | "UNTRUSTED_SOURCE"
-  | "SANDBOX_TRIGGER"
-  | "BLOCKED_DOMAIN"
-  | "INDIRECT_INJECTION"
-  | "MANIPULATION_PATTERN";
-
-export interface HeuristicResult {
-  passed: boolean;
-  blacklisted: boolean;
-  amount_exceeded: boolean;
-  details: string[];
-}
-
-export interface LLMAnalysisResult {
-  risk_score: number;
-  consistency_check: boolean;
-  prompt_injection_detected: boolean;
-  explanation: string;
-  raw_response?: string;
-}
-
-export interface SourceDetectionResult {
-  risk_score: number;
-  flags: SourceDetectionFlag[];
-  urls_found: string[];
-  untrusted_domains: string[];
-  sandbox_mode: boolean;
-  details: string[];
-}
+export type { AnalysisDecision, SourceDetectionFlag, HeuristicResult, LLMAnalysisResult, SourceDetectionResult };
 
 /**
- * TransactionEvent - Matches the backend's AnalysisResult Pydantic model
+ * TransactionEvent - Alias for AnalysisResult for component use
  */
-export interface TransactionEvent {
-  request_id: string;
-  decision: AnalysisDecision;
-  risk_score: number;
-  explanation: string;
-  heuristic_result: HeuristicResult;
-  source_detection_result?: SourceDetectionResult;
-  llm_result?: LLMAnalysisResult;
-  analysis_time_ms: number;
-  timestamp: string;
-}
-
-// =============================================================================
-// MOCK DATA GENERATOR
-// =============================================================================
-
-const MOCK_EXPLANATIONS: Record<AnalysisDecision, string[]> = {
-  allow: [
-    "Transaction approved. Low risk: known program, amount within limits.",
-    "Transaction approved. Reasoning consistent with swap operation.",
-    "Transaction approved. All security checks passed.",
-    "Transaction approved. Standard DeFi operation detected.",
-  ],
-  block: [
-    "Transaction BLOCKED. Reason: Target address is on blacklist.",
-    "Transaction BLOCKED. Reason: Prompt injection detected in reasoning.",
-    "Transaction BLOCKED. Reason: Untrusted data source - indirect injection attack.",
-    "Transaction BLOCKED. Reason: Amount exceeds configured limits.",
-    "Transaction BLOCKED. Reason: SANDBOX_TRIGGER from untrusted domain.",
-  ],
-};
-
-function generateMockEvent(): TransactionEvent {
-  const isBlocked = Math.random() < 0.35; // 35% chance of blocked
-  const decision: AnalysisDecision = isBlocked ? "block" : "allow";
-  const riskScore = isBlocked
-    ? 70 + Math.floor(Math.random() * 30) // 70-100 for blocked
-    : Math.floor(Math.random() * 40); // 0-40 for allowed
-
-  const explanations = MOCK_EXPLANATIONS[decision];
-  const explanation = explanations[Math.floor(Math.random() * explanations.length)];
-
-  const hasSandboxTrigger = isBlocked && Math.random() < 0.4;
-
-  return {
-    request_id: crypto.randomUUID(),
-    decision,
-    risk_score: riskScore,
-    explanation: explanation ?? "Analysis complete.",
-    heuristic_result: {
-      passed: !isBlocked,
-      blacklisted: isBlocked && Math.random() < 0.3,
-      amount_exceeded: isBlocked && Math.random() < 0.2,
-      details: isBlocked
-        ? ["Suspicious activity detected"]
-        : ["Address not on blacklist", "Amount within limits"],
-    },
-    source_detection_result: hasSandboxTrigger
-      ? {
-          risk_score: 80,
-          flags: ["UNTRUSTED_SOURCE", "SANDBOX_TRIGGER"],
-          urls_found: ["https://evil-api.xyz/price"],
-          untrusted_domains: ["evil-api.xyz"],
-          sandbox_mode: true,
-          details: ["Untrusted domain detected", "SANDBOX_TRIGGER activated"],
-        }
-      : undefined,
-    llm_result: {
-      risk_score: riskScore,
-      consistency_check: !isBlocked,
-      prompt_injection_detected: isBlocked && Math.random() < 0.3,
-      explanation: explanation ?? "Analysis complete.",
-    },
-    analysis_time_ms: 5 + Math.random() * 200,
-    timestamp: new Date().toISOString(),
-  };
-}
+export type TransactionEvent = AnalysisResult;
 
 // =============================================================================
 // RISK SCORE BAR COMPONENT
@@ -375,7 +277,17 @@ function FeedHeader() {
 // STATS BAR
 // =============================================================================
 
-function StatsBar({ events }: { events: TransactionEvent[] }) {
+function StatsBar({
+  events,
+  isConnected,
+  isLoading,
+  error,
+}: {
+  events: TransactionEvent[];
+  isConnected: boolean;
+  isLoading: boolean;
+  error: string | null;
+}) {
   const allowed = events.filter((e) => e.decision === "allow").length;
   const blocked = events.filter((e) => e.decision === "block").length;
   const avgLatency =
@@ -387,14 +299,24 @@ function StatsBar({ events }: { events: TransactionEvent[] }) {
     <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800 bg-zinc-900/50">
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2">
-          <motion.div
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ repeat: Infinity, duration: 2 }}
-            className="w-2 h-2 rounded-full bg-emerald-500"
-            style={{ boxShadow: "0 0 8px 2px rgba(16, 185, 129, 0.4)" }}
-          />
+          {isLoading ? (
+            <motion.div
+              animate={{ opacity: [0.3, 1, 0.3] }}
+              transition={{ repeat: Infinity, duration: 1.5 }}
+              className="w-2 h-2 rounded-full bg-amber-500"
+            />
+          ) : isConnected ? (
+            <motion.div
+              animate={{ scale: [1, 1.2, 1] }}
+              transition={{ repeat: Infinity, duration: 2 }}
+              className="w-2 h-2 rounded-full bg-emerald-500"
+              style={{ boxShadow: "0 0 8px 2px rgba(16, 185, 129, 0.4)" }}
+            />
+          ) : (
+            <div className="w-2 h-2 rounded-full bg-red-500" />
+          )}
           <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">
-            Live Feed
+            {isLoading ? "Connecting..." : isConnected ? "Live Feed" : error || "Disconnected"}
           </span>
         </div>
         <div className="h-4 w-px bg-zinc-800" />
@@ -428,50 +350,70 @@ function StatsBar({ events }: { events: TransactionEvent[] }) {
 // =============================================================================
 
 interface LiveTransactionFeedProps {
-  events?: TransactionEvent[];
-  enableMockData?: boolean;
+  pollingInterval?: number; // Polling interval in ms (default 2000)
 }
 
 export function LiveTransactionFeed({
-  events: externalEvents,
-  enableMockData = true,
+  pollingInterval = 2000,
 }: LiveTransactionFeedProps) {
-  const [events, setEvents] = useState<TransactionEvent[]>(externalEvents ?? []);
+  const [events, setEvents] = useState<TransactionEvent[]>([]);
   const [newIds, setNewIds] = useState<Set<string>>(new Set());
+  const [isConnected, setIsConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Sync with external events if provided
-  useEffect(() => {
-    if (externalEvents) {
-      setEvents(externalEvents);
+  // Track previously seen IDs to detect new transactions
+  const seenIdsRef = useRef<Set<string>>(new Set());
+
+  // Fetch recent transactions from API
+  const fetchTransactions = useCallback(async () => {
+    try {
+      const data = await shieldAPI.getRecentTransactions(50);
+      setIsConnected(true);
+      setError(null);
+
+      // Detect new transactions (ones we haven't seen before)
+      const newTransactionIds: string[] = [];
+      data.forEach((tx) => {
+        if (!seenIdsRef.current.has(tx.request_id)) {
+          newTransactionIds.push(tx.request_id);
+          seenIdsRef.current.add(tx.request_id);
+        }
+      });
+
+      // Mark new transactions for animation
+      if (newTransactionIds.length > 0) {
+        setNewIds((prev) => new Set([...prev, ...newTransactionIds]));
+
+        // Remove "new" status after animation
+        setTimeout(() => {
+          setNewIds((prev) => {
+            const updated = new Set(prev);
+            newTransactionIds.forEach((id) => updated.delete(id));
+            return updated;
+          });
+        }, 1500);
+      }
+
+      setEvents(data);
+      setIsLoading(false);
+    } catch (err) {
+      setIsConnected(false);
+      setError(err instanceof Error ? err.message : "Failed to fetch");
+      setIsLoading(false);
     }
-  }, [externalEvents]);
+  }, []);
 
-  // Generate mock "Active Threat" every 3 seconds
+  // Poll API every `pollingInterval` ms
   useEffect(() => {
-    if (!enableMockData) return;
+    // Initial fetch
+    fetchTransactions();
 
-    // Generate initial batch
-    const initialEvents = Array.from({ length: 8 }, generateMockEvent);
-    setEvents(initialEvents);
-
-    const interval = setInterval(() => {
-      const newEvent = generateMockEvent();
-
-      setNewIds((prev) => new Set([...prev, newEvent.request_id]));
-      setEvents((prev) => [newEvent, ...prev.slice(0, 49)]);
-
-      // Remove "new" status after animation completes
-      setTimeout(() => {
-        setNewIds((prev) => {
-          const updated = new Set(prev);
-          updated.delete(newEvent.request_id);
-          return updated;
-        });
-      }, 1500);
-    }, 3000);
+    // Set up polling
+    const interval = setInterval(fetchTransactions, pollingInterval);
 
     return () => clearInterval(interval);
-  }, [enableMockData]);
+  }, [fetchTransactions, pollingInterval]);
 
   return (
     <div className="h-full flex flex-col bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden">
@@ -498,7 +440,7 @@ export function LiveTransactionFeed({
       </div>
 
       {/* Stats Bar */}
-      <StatsBar events={events} />
+      <StatsBar events={events} isConnected={isConnected} isLoading={isLoading} error={error} />
 
       {/* Column Headers */}
       <FeedHeader />

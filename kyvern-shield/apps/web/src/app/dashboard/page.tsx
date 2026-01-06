@@ -151,7 +151,7 @@ export default function DashboardPage() {
         <div className="h-full grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Left Column - Transaction Feed */}
           <div className="lg:col-span-7 xl:col-span-8 h-[600px] lg:h-full">
-            <LiveTransactionFeed enableMockData={true} />
+            <LiveTransactionFeed pollingInterval={2000} />
           </div>
 
           {/* Right Column - Map & Circuit Breaker */}

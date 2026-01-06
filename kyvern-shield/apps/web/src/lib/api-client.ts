@@ -50,7 +50,9 @@ export type SourceDetectionFlag =
   | "SANDBOX_TRIGGER"
   | "BLOCKED_DOMAIN"
   | "INDIRECT_INJECTION"
-  | "MANIPULATION_PATTERN";
+  | "MANIPULATION_PATTERN"
+  | "IGNORE_INSTRUCTIONS"
+  | "URGENCY_MANIPULATION";
 
 export interface SourceDetectionResult {
   risk_score: number;
@@ -154,6 +156,14 @@ class ShieldAPIClient {
       method: "POST",
       body: JSON.stringify(scenario),
     });
+  }
+
+  /**
+   * Get recent transaction analysis results for the dashboard feed.
+   * This is polled to show real-time activity.
+   */
+  async getRecentTransactions(limit: number = 50): Promise<AnalysisResult[]> {
+    return this.request<AnalysisResult[]>(`/api/v1/analysis/recent?limit=${limit}`);
   }
 
   // ===========================================================================

@@ -7,6 +7,7 @@ These endpoints provide the core Shield functionality:
 - Manage blacklist entries
 """
 
+from collections import deque
 from typing import Any, Optional
 from uuid import uuid4
 
@@ -14,6 +15,23 @@ import structlog
 from fastapi import APIRouter, HTTPException, Query
 
 from src.db.blacklist import get_blacklist_db
+
+# =============================================================================
+# In-Memory Store for Recent Transactions (Dashboard Feed)
+# =============================================================================
+
+# Store last 100 analysis results for the dashboard feed
+_recent_transactions: deque = deque(maxlen=100)
+
+
+def _store_transaction(result: "AnalysisResult") -> None:
+    """Store a transaction result for the dashboard feed."""
+    _recent_transactions.appendleft(result)
+
+
+def _get_recent_transactions(limit: int = 50) -> list:
+    """Get recent transaction results."""
+    return list(_recent_transactions)[:limit]
 from src.models.blacklist import (
     BlacklistAddRequest,
     BlacklistEntry,
@@ -101,7 +119,7 @@ async def analyze_intent(intent: TransactionIntent) -> AnalysisResult:
                 flags=source_scan["flags"],
             )
 
-            return AnalysisResult(
+            result = AnalysisResult(
                 request_id=intent.request_id,
                 decision=AnalysisDecision.BLOCK,
                 risk_score=source_scan["risk_score"],
@@ -121,6 +139,8 @@ async def analyze_intent(intent: TransactionIntent) -> AnalysisResult:
                 llm_result=None,
                 analysis_time_ms=analysis_time,
             )
+            _store_transaction(result)
+            return result
 
         # No SANDBOX_TRIGGER - proceed with full analysis
         analyzer = await get_transaction_analyzer()
@@ -137,6 +157,9 @@ async def analyze_intent(intent: TransactionIntent) -> AnalysisResult:
             risk_score=result.risk_score,
             analysis_time_ms=round(result.analysis_time_ms, 2),
         )
+
+        # Store for dashboard feed
+        _store_transaction(result)
 
         return result
 
@@ -199,6 +222,9 @@ async def simulate_rogue_agent(request: RogueAgentRequest) -> AnalysisResult:
         decision=result.decision.value,
         risk_score=result.risk_score,
     )
+
+    # Store for dashboard feed
+    _store_transaction(result)
 
     return result
 
@@ -294,6 +320,30 @@ def _generate_malicious_intent(request: RogueAgentRequest) -> TransactionIntent:
             function_signature="transfer",
             reasoning="Moving funds for reasons.",
         )
+
+
+# =============================================================================
+# Recent Transactions (Dashboard Feed)
+# =============================================================================
+
+
+@router.get(
+    "/recent",
+    response_model=list[AnalysisResult],
+    summary="Get Recent Transaction Analysis Results",
+    description="""
+    Get the most recent transaction analysis results for the dashboard feed.
+
+    Returns up to 50 recent transactions, ordered by most recent first.
+    This endpoint is polled by the dashboard to display real-time activity.
+    """,
+    tags=["Dashboard"],
+)
+async def get_recent_transactions(
+    limit: int = Query(default=50, ge=1, le=100, description="Maximum results to return"),
+) -> list[AnalysisResult]:
+    """Get recent transaction analysis results for the dashboard."""
+    return _get_recent_transactions(limit)
 
 
 # =============================================================================
