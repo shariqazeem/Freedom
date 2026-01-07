@@ -15,6 +15,7 @@ from src.db.supabase import (
     list_user_api_keys,
     revoke_api_key as db_revoke_api_key,
     get_or_create_user,
+    get_or_create_user_by_supabase_id,
 )
 
 logger = structlog.get_logger()
@@ -39,6 +40,10 @@ class CreateAPIKeyRequest(BaseModel):
     email: str = Field(
         ...,
         description="User email address (for key ownership)",
+    )
+    user_id: Optional[str] = Field(
+        default=None,
+        description="Supabase Auth user ID (if authenticated via dashboard)",
     )
 
 
@@ -104,10 +109,17 @@ async def create_key(request: CreateAPIKeyRequest) -> CreateAPIKeyResponse:
 
     This endpoint creates a new API key for the given email.
     If the user doesn't exist, they are created automatically.
+
+    If user_id is provided (from Supabase Auth), it uses that directly.
     """
     try:
         # Get or create user
-        user = await get_or_create_user(request.email)
+        if request.user_id:
+            # User is authenticated via Supabase Auth on the dashboard
+            user = await get_or_create_user_by_supabase_id(request.user_id, request.email)
+        else:
+            # Legacy: create user by email only
+            user = await get_or_create_user(request.email)
         user_id = user["id"]
 
         # Generate the API key
@@ -137,6 +149,44 @@ async def create_key(request: CreateAPIKeyRequest) -> CreateAPIKeyResponse:
         raise HTTPException(
             status_code=500,
             detail=f"Failed to create API key: {str(e)}",
+        )
+
+
+@router.get(
+    "/keys/user/{user_id}",
+    response_model=ListAPIKeysResponse,
+    summary="List User's API Keys (Dashboard)",
+    description="""
+    List all active API keys for a specific user (dashboard use).
+
+    This endpoint is used by the dashboard when the user is authenticated
+    via Supabase Auth.
+    """,
+)
+async def list_keys_by_user(user_id: str) -> ListAPIKeysResponse:
+    """List all API keys for a user (dashboard endpoint)."""
+    try:
+        keys = await list_user_api_keys(user_id)
+
+        return ListAPIKeysResponse(
+            keys=[
+                APIKeyInfo(
+                    id=k["id"],
+                    name=k["name"],
+                    key_prefix=k["key_prefix"],
+                    created_at=k["created_at"],
+                    last_used_at=k.get("last_used_at"),
+                )
+                for k in keys
+            ],
+            total=len(keys),
+        )
+
+    except Exception as e:
+        logger.error("Failed to list API keys for user", error=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to list API keys: {str(e)}",
         )
 
 
@@ -178,6 +228,52 @@ async def list_keys(
         raise HTTPException(
             status_code=500,
             detail=f"Failed to list API keys: {str(e)}",
+        )
+
+
+@router.delete(
+    "/keys/user/{user_id}/{key_id}",
+    summary="Revoke an API Key (Dashboard)",
+    description="""
+    Revoke (delete) an API key from the dashboard.
+
+    This endpoint is used by the dashboard when the user is authenticated
+    via Supabase Auth.
+    """,
+)
+async def revoke_key_dashboard(
+    user_id: str,
+    key_id: str,
+) -> dict:
+    """Revoke an API key from the dashboard."""
+    try:
+        success = await db_revoke_api_key(key_id=key_id, user_id=user_id)
+
+        if not success:
+            raise HTTPException(
+                status_code=404,
+                detail="API key not found or already revoked",
+            )
+
+        logger.info(
+            "API key revoked via dashboard",
+            key_id=key_id,
+            user_id=user_id,
+        )
+
+        return {
+            "status": "revoked",
+            "key_id": key_id,
+            "message": "API key has been revoked and can no longer be used.",
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to revoke API key", error=str(e))
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to revoke API key: {str(e)}",
         )
 
 

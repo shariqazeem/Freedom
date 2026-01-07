@@ -149,6 +149,41 @@ async def get_or_create_user(email: str) -> dict:
     return await create_user(email)
 
 
+async def get_or_create_user_by_supabase_id(supabase_user_id: str, email: str) -> dict:
+    """
+    Get or create a user using their Supabase Auth user ID.
+
+    This is used when the user authenticates via Supabase Auth on the frontend.
+    The user_id from Supabase Auth is stored directly.
+
+    Args:
+        supabase_user_id: The user's UUID from Supabase Auth.
+        email: User's email address.
+
+    Returns:
+        User record.
+    """
+    client = get_supabase()
+
+    # First try to find by supabase_user_id
+    result = client.table("users").select("*").eq("id", supabase_user_id).execute()
+
+    if result.data:
+        return result.data[0]
+
+    # Create new user with the Supabase Auth ID
+    result = client.table("users").insert({
+        "id": supabase_user_id,
+        "email": email,
+    }).execute()
+
+    if not result.data:
+        raise ValueError("Failed to create user")
+
+    logger.info("User created from Supabase Auth", user_id=supabase_user_id, email=email)
+    return result.data[0]
+
+
 # =============================================================================
 # API Key Database Operations
 # =============================================================================

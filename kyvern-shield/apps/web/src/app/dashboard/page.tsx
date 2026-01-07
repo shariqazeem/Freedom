@@ -5,17 +5,20 @@ import {
   Shield,
   Activity,
   ArrowUpRight,
+  LogOut,
+  Loader2,
 } from "lucide-react";
 
 import { LiveTransactionFeed } from "@/components/dashboard/live-transaction-feed";
 import { CircuitBreakerPanel } from "@/components/dashboard/circuit-breaker-panel";
 import { ThreatMap } from "@/components/dashboard/threat-map";
+import { useAuth } from "@/lib/auth-context";
 
 // =============================================================================
 // HEADER COMPONENT (Matching kyvernlabs design)
 // =============================================================================
 
-function DashboardHeader() {
+function DashboardHeader({ userEmail, onSignOut }: { userEmail?: string; onSignOut: () => void }) {
   return (
     <header className="border-b border-white/10 bg-[#050505]/95 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
@@ -51,18 +54,22 @@ function DashboardHeader() {
           </nav>
         </div>
 
-        {/* Right - Status */}
-        <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs text-gray-500">All Systems Operational</span>
-          </div>
-          <a
-            href="https://kyvernlabs.com"
-            className="text-sm text-gray-500 hover:text-white transition-colors hidden md:block"
-          >
-            kyvernlabs.com
-          </a>
+        {/* Right - User & Sign Out */}
+        <div className="flex items-center gap-3">
+          {userEmail && (
+            <>
+              <span className="hidden sm:block text-xs text-gray-400">
+                {userEmail}
+              </span>
+              <button
+                onClick={onSignOut}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-400 hover:text-white border border-white/10 hover:border-white/20 transition-colors"
+              >
+                <LogOut className="w-3 h-3" />
+                Sign Out
+              </button>
+            </>
+          )}
         </div>
       </div>
     </header>
@@ -122,10 +129,20 @@ function StatusBar() {
 // =============================================================================
 
 export default function DashboardPage() {
+  const { user, isLoading, signOut } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#050505] flex flex-col">
       {/* Header */}
-      <DashboardHeader />
+      <DashboardHeader userEmail={user?.email} onSignOut={signOut} />
 
       {/* Status Bar */}
       <StatusBar />

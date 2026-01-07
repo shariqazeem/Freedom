@@ -115,6 +115,7 @@ export interface APIKeyInfo {
 export interface CreateAPIKeyRequest {
   name: string;
   email: string;
+  user_id?: string;
 }
 
 export interface CreateAPIKeyResponse {
@@ -242,10 +243,27 @@ class ShieldAPIClient {
    * Create a new API key.
    * Returns the raw key ONLY ONCE - must be saved immediately.
    */
-  async createApiKey(name: string, email: string): Promise<CreateAPIKeyResponse> {
+  async createApiKey(name: string, email: string, userId?: string): Promise<CreateAPIKeyResponse> {
     return this.request<CreateAPIKeyResponse>("/api/v1/auth/keys", {
       method: "POST",
-      body: JSON.stringify({ name, email }),
+      body: JSON.stringify({ name, email, user_id: userId }),
+    });
+  }
+
+  /**
+   * List all API keys for a user (dashboard use).
+   * Uses Supabase Auth user ID.
+   */
+  async listApiKeysByUser(userId: string): Promise<ListAPIKeysResponse> {
+    return this.request<ListAPIKeysResponse>(`/api/v1/auth/keys/user/${userId}`);
+  }
+
+  /**
+   * Delete (revoke) an API key using user ID (dashboard use).
+   */
+  async deleteApiKeyByUser(userId: string, keyId: string): Promise<{ status: string; key_id: string; message: string }> {
+    return this.request(`/api/v1/auth/keys/user/${userId}/${keyId}`, {
+      method: "DELETE",
     });
   }
 
@@ -466,33 +484,52 @@ export function useTransactionFeed(pollingInterval = 5000) {
 }
 
 /**
- * Hook for API key management.
+ * Hook for API key management with Supabase Auth.
  */
-export function useAPIKeys(email: string) {
+export function useAPIKeys(userId: string | null, email: string | null) {
   const [keys, setKeys] = useState<APIKeyInfo[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
 
+  // Fetch user's keys on mount
+  const fetchKeys = useCallback(async () => {
+    if (!userId) return;
+    setIsFetching(true);
+    setError(null);
+    try {
+      const response = await shieldAPI.listApiKeysByUser(userId);
+      setKeys(response.keys);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to fetch keys";
+      setError(message);
+    } finally {
+      setIsFetching(false);
+    }
+  }, [userId]);
+
+  // Fetch keys when userId changes
+  useEffect(() => {
+    if (userId) {
+      fetchKeys();
+    }
+  }, [userId, fetchKeys]);
+
   // Create a new API key
   const createKey = useCallback(async (name: string) => {
+    if (!userId || !email) {
+      setError("You must be logged in to create API keys");
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
-      const response = await shieldAPI.createApiKey(name, email);
+      const response = await shieldAPI.createApiKey(name, email, userId);
       // Store the raw key to show in modal
       setNewlyCreatedKey(response.key);
-      // Add to local list (without the raw key)
-      setKeys((prev) => [
-        {
-          id: response.id,
-          name: response.name,
-          key_prefix: response.key_prefix,
-          created_at: new Date().toISOString(),
-          last_used_at: null,
-        },
-        ...prev,
-      ]);
+      // Refresh the keys list
+      await fetchKeys();
       return response;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to create key";
@@ -501,19 +538,23 @@ export function useAPIKeys(email: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [email]);
+  }, [userId, email, fetchKeys]);
 
   // Clear the newly created key (after user has copied it)
   const clearNewKey = useCallback(() => {
     setNewlyCreatedKey(null);
   }, []);
 
-  // Delete an API key (requires an existing key for auth)
-  const deleteKey = useCallback(async (keyId: string, authKey: string) => {
+  // Delete an API key
+  const deleteKey = useCallback(async (keyId: string) => {
+    if (!userId) {
+      setError("You must be logged in to delete API keys");
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
-      await shieldAPI.deleteApiKey(keyId, authKey);
+      await shieldAPI.deleteApiKeyByUser(userId, keyId);
       setKeys((prev) => prev.filter((k) => k.id !== keyId));
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to delete key";
@@ -522,15 +563,17 @@ export function useAPIKeys(email: string) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [userId]);
 
   return {
     keys,
     isLoading,
+    isFetching,
     error,
     createKey,
     deleteKey,
     newlyCreatedKey,
     clearNewKey,
+    refetch: fetchKeys,
   };
 }

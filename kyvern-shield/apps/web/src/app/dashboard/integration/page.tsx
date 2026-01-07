@@ -19,15 +19,10 @@ import {
   X,
   Loader2,
   CheckCircle2,
+  LogOut,
 } from "lucide-react";
 import { useAPIKeys, APIKeyInfo } from "@/lib/api-client";
-
-// =============================================================================
-// CONSTANTS
-// =============================================================================
-
-// For demo purposes - in production, this would come from auth
-const USER_EMAIL = "demo@kyvernlabs.com";
+import { useAuth } from "@/lib/auth-context";
 
 // =============================================================================
 // COPY BUTTON COMPONENT
@@ -379,15 +374,18 @@ function APIKeyCard({
 // =============================================================================
 
 export default function IntegrationPage() {
+  const { user, isLoading: authLoading, signOut } = useAuth();
+
   const {
     keys,
     isLoading,
+    isFetching,
     error,
     createKey,
-    deleteKey: _deleteKey, // TODO: Implement after adding user sessions
+    deleteKey,
     newlyCreatedKey,
     clearNewKey,
-  } = useAPIKeys(USER_EMAIL);
+  } = useAPIKeys(user?.id ?? null, user?.email ?? null);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [deletingKeyId, setDeletingKeyId] = useState<string | null>(null);
@@ -402,21 +400,27 @@ export default function IntegrationPage() {
   };
 
   const handleDeleteKey = async (keyId: string) => {
-    // For deletion, we'd need an existing key to authenticate
-    // In a real app, this would use the user's session token
-    // For now, we'll show an alert
     if (!confirm("Are you sure you want to delete this API key? This cannot be undone.")) {
       return;
     }
     setDeletingKeyId(keyId);
     try {
-      // Note: In production, you'd use proper auth here
-      // await deleteKey(keyId, authToken);
-      alert("Key deletion requires authentication. This feature will be available after implementing user sessions.");
+      await deleteKey(keyId);
+    } catch {
+      // Error handled by hook
     } finally {
       setDeletingKeyId(null);
     }
   };
+
+  // Show loading while auth is being checked
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#050505] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      </div>
+    );
+  }
 
   // SDK Code Examples
   const installCode = `npm install @kyvern/shield-sdk`;
@@ -526,11 +530,21 @@ else:
               </a>
             </nav>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="hidden sm:flex items-center gap-2 text-xs text-gray-500">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              Connected
-            </span>
+          <div className="flex items-center gap-3">
+            {user && (
+              <>
+                <span className="hidden sm:block text-xs text-gray-400">
+                  {user.email}
+                </span>
+                <button
+                  onClick={signOut}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-400 hover:text-white border border-white/10 hover:border-white/20 transition-colors"
+                >
+                  <LogOut className="w-3 h-3" />
+                  Sign Out
+                </button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -586,7 +600,12 @@ else:
 
                 {/* Keys List */}
                 <div className="space-y-3">
-                  {keys.length === 0 ? (
+                  {isFetching ? (
+                    <div className="text-center py-8">
+                      <Loader2 className="w-8 h-8 text-gray-600 mx-auto mb-3 animate-spin" />
+                      <p className="text-sm text-gray-500">Loading your keys...</p>
+                    </div>
+                  ) : keys.length === 0 ? (
                     <div className="text-center py-8">
                       <Key className="w-8 h-8 text-gray-600 mx-auto mb-3" />
                       <p className="text-sm text-gray-500">No API keys yet</p>
