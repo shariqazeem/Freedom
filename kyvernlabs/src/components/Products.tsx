@@ -13,8 +13,7 @@ const products = [
       "Real-time security layer that protects autonomous AI agents from prompt injection attacks, wallet drains, and unauthorized transactions. Multi-layer analysis pipeline with sub-50ms latency.",
     status: "Live Beta",
     statusColor: "bg-emerald-500",
-    link: "https://shield.kyvern.network",
-    localLink: "/dashboard",
+    link: "https://shield.kyvernlabs.com/dashboard",
     features: [
       { label: "Indirect Injection Defense", icon: Shield },
       { label: "Heuristic Analysis", icon: Activity },
@@ -161,7 +160,7 @@ export default function Products() {
 
                       {/* CTA */}
                       <a
-                        href={product.localLink}
+                        href={product.link}
                         className="group/btn inline-flex items-center gap-2 px-6 py-3.5 bg-white text-black text-sm font-semibold hover:bg-gray-100 transition-colors"
                       >
                         Launch Shield Console
@@ -283,7 +282,7 @@ export default function Products() {
               <ArrowUpRight className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" />
             </a>
             <a
-              href="/dashboard"
+              href="https://shield.kyvernlabs.com/dashboard"
               className="group px-6 py-3.5 bg-white text-black font-semibold text-sm flex items-center gap-2 hover:bg-gray-100 transition-colors"
             >
               Try Shield
