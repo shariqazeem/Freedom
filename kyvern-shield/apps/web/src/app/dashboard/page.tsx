@@ -1,80 +1,15 @@
 "use client";
 
-import Link from "next/link";
 import {
-  Shield,
   Activity,
-  ArrowUpRight,
-  LogOut,
   Loader2,
 } from "lucide-react";
 
 import { LiveTransactionFeed } from "@/components/dashboard/live-transaction-feed";
 import { CircuitBreakerPanel } from "@/components/dashboard/circuit-breaker-panel";
 import { ThreatMap } from "@/components/dashboard/threat-map";
+import { DashboardHeader } from "@/components/dashboard/header";
 import { useAuth } from "@/lib/auth-context";
-
-// =============================================================================
-// HEADER COMPONENT (Matching kyvernlabs design)
-// =============================================================================
-
-function DashboardHeader({ userEmail, onSignOut }: { userEmail?: string; onSignOut: () => void }) {
-  return (
-    <header className="border-b border-white/10 bg-[#050505]/95 backdrop-blur-sm sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-        {/* Logo & Title */}
-        <div className="flex items-center gap-4">
-          <Link href="https://kyvernlabs.com" className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-emerald-500" />
-            <span className="font-bold text-sm text-white tracking-tight">KYVERN SHIELD</span>
-          </Link>
-          <div className="h-5 w-px bg-white/10" />
-          <nav className="hidden md:flex items-center gap-6">
-            <Link
-              href="/dashboard"
-              className="text-sm text-white font-medium"
-            >
-              Monitor
-            </Link>
-            <Link
-              href="/dashboard/integration"
-              className="text-sm text-gray-500 hover:text-white transition-colors"
-            >
-              Integration
-            </Link>
-            <a
-              href="https://docs.kyvernlabs.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-gray-500 hover:text-white transition-colors flex items-center gap-1"
-            >
-              Docs
-              <ArrowUpRight className="w-3 h-3" />
-            </a>
-          </nav>
-        </div>
-
-        {/* Right - User & Sign Out */}
-        <div className="flex items-center gap-3">
-          {userEmail && (
-            <>
-              <span className="hidden sm:block text-xs text-gray-400">
-                {userEmail}
-              </span>
-              <button
-                onClick={onSignOut}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-400 hover:text-white border border-white/10 hover:border-white/20 transition-colors"
-              >
-                <LogOut className="w-3 h-3" />
-                Sign Out
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    </header>
-  );
-}
 
 // =============================================================================
 // STATUS BAR (Matching kyvernlabs design)
@@ -129,7 +64,7 @@ function StatusBar() {
 // =============================================================================
 
 export default function DashboardPage() {
-  const { user, isLoading, signOut } = useAuth();
+  const { isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -142,7 +77,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-[#050505] flex flex-col">
       {/* Header */}
-      <DashboardHeader userEmail={user?.email} onSignOut={signOut} />
+      <DashboardHeader />
 
       {/* Status Bar */}
       <StatusBar />

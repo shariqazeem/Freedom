@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
-  Shield,
   Key,
   Copy,
   Check,
@@ -19,10 +17,10 @@ import {
   X,
   Loader2,
   CheckCircle2,
-  LogOut,
 } from "lucide-react";
 import { useAPIKeys, APIKeyInfo } from "@/lib/api-client";
 import { useAuth } from "@/lib/auth-context";
+import { DashboardHeader } from "@/components/dashboard/header";
 
 // =============================================================================
 // COPY BUTTON COMPONENT
@@ -374,7 +372,7 @@ function APIKeyCard({
 // =============================================================================
 
 export default function IntegrationPage() {
-  const { user, isLoading: authLoading, signOut } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
 
   const {
     keys,
@@ -498,56 +496,7 @@ else:
       )}
 
       {/* Header */}
-      <header className="border-b border-white/10 bg-[#050505]/95 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="https://kyvernlabs.com" className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-emerald-500" />
-              <span className="font-bold text-sm text-white tracking-tight">KYVERN SHIELD</span>
-            </Link>
-            <div className="h-5 w-px bg-white/10" />
-            <nav className="hidden md:flex items-center gap-6">
-              <Link
-                href="/dashboard"
-                className="text-sm text-gray-500 hover:text-white transition-colors"
-              >
-                Monitor
-              </Link>
-              <Link
-                href="/dashboard/integration"
-                className="text-sm text-white font-medium"
-              >
-                Integration
-              </Link>
-              <a
-                href="https://docs.kyvernlabs.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-gray-500 hover:text-white transition-colors flex items-center gap-1"
-              >
-                Docs
-                <ArrowUpRight className="w-3 h-3" />
-              </a>
-            </nav>
-          </div>
-          <div className="flex items-center gap-3">
-            {user && (
-              <>
-                <span className="hidden sm:block text-xs text-gray-400">
-                  {user.email}
-                </span>
-                <button
-                  onClick={signOut}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-400 hover:text-white border border-white/10 hover:border-white/20 transition-colors"
-                >
-                  <LogOut className="w-3 h-3" />
-                  Sign Out
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </header>
+      <DashboardHeader />
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-6 py-12">
