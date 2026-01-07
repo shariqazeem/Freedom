@@ -18,6 +18,7 @@ dependencies = [
     "sqlalchemy>=2.0.0",
     "alembic>=1.13.0",
     "asyncpg>=0.29.0",
+    "supabase>=2.0.0",
     "solana>=0.32.0",
     "anchorpy>=0.19.0",
     "numpy>=1.26.0",

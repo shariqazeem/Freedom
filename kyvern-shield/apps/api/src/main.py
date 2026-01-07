@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import make_asgi_app
 
-from src.routes import agents, alerts, analysis, health, transactions
+from src.routes import agents, alerts, analysis, api_keys, health, transactions
 from src.config import settings
 
 # Configure structured logging
@@ -71,6 +71,7 @@ app.mount("/metrics", metrics_app)
 
 # Include routers
 app.include_router(health.router, tags=["Health"])
+app.include_router(api_keys.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(analysis.router, prefix="/api/v1/analysis", tags=["Analysis"])
 app.include_router(agents.router, prefix="/api/v1/agents", tags=["Agents"])
 app.include_router(transactions.router, prefix="/api/v1/transactions", tags=["Transactions"])

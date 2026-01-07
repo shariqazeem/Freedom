@@ -12,9 +12,10 @@ from typing import Any, Optional
 from uuid import uuid4
 
 import structlog
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from src.db.blacklist import get_blacklist_db
+from src.services.auth import APIKeyAuth, verify_api_key
 
 # =============================================================================
 # In-Memory Store for Recent Transactions (Dashboard Feed)
@@ -66,6 +67,8 @@ router = APIRouter()
     description="""
     Submit a transaction intent for security analysis.
 
+    **Authentication Required**: Include `X-API-Key` header with a valid API key.
+
     The Shield analyzes the intent through two layers:
     1. **Heuristic Analysis**: Fast rule-based checks (blacklist, limits, patterns)
     2. **LLM Analysis**: Deep semantic analysis using Llama 3 (consistency, prompt injection)
@@ -73,7 +76,10 @@ router = APIRouter()
     Returns a decision (allow/block) with risk score and explanation.
     """,
 )
-async def analyze_intent(intent: TransactionIntent) -> AnalysisResult:
+async def analyze_intent(
+    intent: TransactionIntent,
+    auth: APIKeyAuth = Depends(verify_api_key),
+) -> AnalysisResult:
     """
     Analyze a transaction intent from an AI agent.
 
@@ -91,6 +97,8 @@ async def analyze_intent(intent: TransactionIntent) -> AnalysisResult:
         "Received transaction intent for analysis",
         request_id=str(intent.request_id),
         agent_id=str(intent.agent_id),
+        api_key_id=auth.key_id,
+        user_id=auth.user_id,
     )
 
     try:
@@ -187,6 +195,8 @@ async def analyze_intent(intent: TransactionIntent) -> AnalysisResult:
     description="""
     Simulate various malicious transaction scenarios for testing.
 
+    **Authentication Required**: Include `X-API-Key` header with a valid API key.
+
     Available scenarios:
     - `blacklisted_address`: Transaction to a known blacklisted address
     - `excessive_amount`: Transaction with amount exceeding limits
@@ -198,7 +208,10 @@ async def analyze_intent(intent: TransactionIntent) -> AnalysisResult:
     """,
     tags=["Testing"],
 )
-async def simulate_rogue_agent(request: RogueAgentRequest) -> AnalysisResult:
+async def simulate_rogue_agent(
+    request: RogueAgentRequest,
+    auth: APIKeyAuth = Depends(verify_api_key),
+) -> AnalysisResult:
     """
     Simulate a rogue agent sending malicious transactions.
 

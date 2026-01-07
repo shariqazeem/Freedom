@@ -1,14 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Shield,
   Key,
   Copy,
   Check,
-  Eye,
-  EyeOff,
   Plus,
   Trash2,
   Clock,
@@ -18,19 +16,18 @@ import {
   BookOpen,
   Zap,
   AlertTriangle,
+  X,
+  Loader2,
+  CheckCircle2,
 } from "lucide-react";
+import { useAPIKeys, APIKeyInfo } from "@/lib/api-client";
 
 // =============================================================================
-// TYPES
+// CONSTANTS
 // =============================================================================
 
-interface APIKey {
-  id: string;
-  name: string;
-  key: string;
-  created: string;
-  lastUsed: string | null;
-}
+// For demo purposes - in production, this would come from auth
+const USER_EMAIL = "demo@kyvernlabs.com";
 
 // =============================================================================
 // COPY BUTTON COMPONENT
@@ -99,48 +96,263 @@ function CodeBlock({
 }
 
 // =============================================================================
+// NEW KEY MODAL COMPONENT
+// =============================================================================
+
+function NewKeyModal({
+  secretKey,
+  onClose,
+}: {
+  secretKey: string;
+  onClose: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(secretKey);
+    setCopied(true);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div className="relative bg-[#0a0a0a] border border-white/10 max-w-lg w-full mx-4 p-6">
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-1 hover:bg-white/5 transition-colors"
+        >
+          <X className="w-5 h-5 text-gray-500" />
+        </button>
+
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center">
+            <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-white">API Key Created</h3>
+            <p className="text-sm text-gray-500">Save it now - you won&apos;t see it again!</p>
+          </div>
+        </div>
+
+        {/* Warning */}
+        <div className="flex items-start gap-3 p-4 bg-amber-500/5 border border-amber-500/20 mb-6">
+          <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm text-amber-200/90 font-medium mb-1">
+              This is your only chance to copy this key
+            </p>
+            <p className="text-xs text-amber-200/70">
+              For security, we don&apos;t store the raw key. If you lose it, you&apos;ll need to create a new one.
+            </p>
+          </div>
+        </div>
+
+        {/* Key Display */}
+        <div className="mb-6">
+          <label className="text-xs text-gray-500 uppercase tracking-wider mb-2 block">
+            Your Secret API Key
+          </label>
+          <div className="flex items-center gap-2 p-4 bg-white/[0.02] border border-white/10 font-mono text-sm">
+            <Key className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+            <code className="text-emerald-400 flex-1 break-all">{secretKey}</code>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3">
+          <button
+            onClick={handleCopy}
+            className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition-colors ${
+              copied
+                ? "bg-emerald-500 text-white"
+                : "bg-white text-black hover:bg-gray-100"
+            }`}
+          >
+            {copied ? (
+              <>
+                <Check className="w-4 h-4" />
+                Copied!
+              </>
+            ) : (
+              <>
+                <Copy className="w-4 h-4" />
+                Copy to Clipboard
+              </>
+            )}
+          </button>
+          <button
+            onClick={onClose}
+            className="px-4 py-3 border border-white/20 text-white text-sm font-medium hover:bg-white/5 transition-colors"
+          >
+            Done
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
+// CREATE KEY MODAL
+// =============================================================================
+
+function CreateKeyModal({
+  onSubmit,
+  onClose,
+  isLoading,
+}: {
+  onSubmit: (name: string) => void;
+  onClose: () => void;
+  isLoading: boolean;
+}) {
+  const [name, setName] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (name.trim()) {
+      onSubmit(name.trim());
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Modal */}
+      <div className="relative bg-[#0a0a0a] border border-white/10 max-w-md w-full mx-4 p-6">
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 p-1 hover:bg-white/5 transition-colors"
+          disabled={isLoading}
+        >
+          <X className="w-5 h-5 text-gray-500" />
+        </button>
+
+        {/* Header */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center">
+            <Key className="w-5 h-5 text-emerald-500" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-white">Create API Key</h3>
+            <p className="text-sm text-gray-500">Give your key a name</p>
+          </div>
+        </div>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit}>
+          <div className="mb-6">
+            <label className="text-xs text-gray-500 uppercase tracking-wider mb-2 block">
+              Key Name
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g., Production Bot"
+              className="w-full px-4 py-3 bg-white/[0.02] border border-white/10 text-white placeholder-gray-600 focus:border-emerald-500/50 focus:outline-none transition-colors"
+              autoFocus
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              disabled={!name.trim() || isLoading}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white text-black text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  Create Key
+                </>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isLoading}
+              className="px-4 py-3 border border-white/20 text-white text-sm font-medium hover:bg-white/5 transition-colors disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// =============================================================================
 // API KEY CARD COMPONENT
 // =============================================================================
 
 function APIKeyCard({
   apiKey,
-  onReveal,
   onDelete,
-  isRevealed,
+  isDeleting,
 }: {
-  apiKey: APIKey;
-  onReveal: () => void;
+  apiKey: APIKeyInfo;
   onDelete: () => void;
-  isRevealed: boolean;
+  isDeleting: boolean;
 }) {
-  const maskedKey = apiKey.key.slice(0, 7) + "..." + apiKey.key.slice(-4);
+  // Format the date
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString();
+  };
 
   return (
     <div className="border border-white/10 bg-[#0a0a0a] p-4 hover:border-white/20 transition-colors">
       <div className="flex items-start justify-between mb-3">
         <div>
           <h4 className="text-sm font-medium text-white">{apiKey.name}</h4>
-          <p className="text-xs text-gray-500 mt-0.5">Created {apiKey.created}</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Created {formatDate(apiKey.created_at)}
+          </p>
         </div>
         <div className="flex items-center gap-1">
           <button
-            onClick={onReveal}
-            className="p-1.5 hover:bg-white/5 transition-colors"
-            title={isRevealed ? "Hide key" : "Reveal key"}
-          >
-            {isRevealed ? (
-              <EyeOff className="w-4 h-4 text-gray-500" />
-            ) : (
-              <Eye className="w-4 h-4 text-gray-500" />
-            )}
-          </button>
-          <CopyButton text={apiKey.key} />
-          <button
             onClick={onDelete}
-            className="p-1.5 hover:bg-red-500/10 transition-colors"
+            disabled={isDeleting}
+            className="p-1.5 hover:bg-red-500/10 transition-colors disabled:opacity-50"
             title="Delete key"
           >
-            <Trash2 className="w-4 h-4 text-gray-500 hover:text-red-500" />
+            {isDeleting ? (
+              <Loader2 className="w-4 h-4 text-gray-500 animate-spin" />
+            ) : (
+              <Trash2 className="w-4 h-4 text-gray-500 hover:text-red-500" />
+            )}
           </button>
         </div>
       </div>
@@ -148,14 +360,14 @@ function APIKeyCard({
       <div className="flex items-center gap-2 px-3 py-2 bg-white/[0.02] border border-white/5">
         <Key className="w-3 h-3 text-emerald-500" />
         <code className="text-xs font-mono text-gray-400 flex-1">
-          {isRevealed ? apiKey.key : maskedKey}
+          {apiKey.key_prefix}•••••••••••••••••••
         </code>
       </div>
 
-      {apiKey.lastUsed && (
+      {apiKey.last_used_at && (
         <div className="flex items-center gap-1 mt-2 text-xs text-gray-600">
           <Clock className="w-3 h-3" />
-          Last used {apiKey.lastUsed}
+          Last used {formatDate(apiKey.last_used_at)}
         </div>
       )}
     </div>
@@ -167,46 +379,43 @@ function APIKeyCard({
 // =============================================================================
 
 export default function IntegrationPage() {
-  const [apiKeys, setApiKeys] = useState<APIKey[]>([
-    {
-      id: "1",
-      name: "Production Key",
-      key: "sk_live_kyvern_a1b2c3d4e5f6g7h8i9j0",
-      created: "2 days ago",
-      lastUsed: "5 minutes ago",
-    },
-  ]);
-  const [revealedKeys, setRevealedKeys] = useState<Set<string>>(new Set());
-  const [isGenerating, setIsGenerating] = useState(false);
+  const {
+    keys,
+    isLoading,
+    error,
+    createKey,
+    deleteKey,
+    newlyCreatedKey,
+    clearNewKey,
+  } = useAPIKeys(USER_EMAIL);
 
-  const generateNewKey = () => {
-    setIsGenerating(true);
-    setTimeout(() => {
-      const newKey: APIKey = {
-        id: Date.now().toString(),
-        name: `API Key ${apiKeys.length + 1}`,
-        key: `sk_live_kyvern_${Math.random().toString(36).substring(2, 22)}`,
-        created: "Just now",
-        lastUsed: null,
-      };
-      setApiKeys([...apiKeys, newKey]);
-      setIsGenerating(false);
-    }, 500);
-  };
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [deletingKeyId, setDeletingKeyId] = useState<string | null>(null);
 
-  const toggleReveal = (id: string) => {
-    const newRevealed = new Set(revealedKeys);
-    if (newRevealed.has(id)) {
-      newRevealed.delete(id);
-    } else {
-      newRevealed.add(id);
+  const handleCreateKey = async (name: string) => {
+    try {
+      await createKey(name);
+      setShowCreateModal(false);
+    } catch {
+      // Error is handled by the hook
     }
-    setRevealedKeys(newRevealed);
   };
 
-  const deleteKey = (id: string) => {
-    setApiKeys(apiKeys.filter((k) => k.id !== id));
-    revealedKeys.delete(id);
+  const handleDeleteKey = async (keyId: string) => {
+    // For deletion, we'd need an existing key to authenticate
+    // In a real app, this would use the user's session token
+    // For now, we'll show an alert
+    if (!confirm("Are you sure you want to delete this API key? This cannot be undone.")) {
+      return;
+    }
+    setDeletingKeyId(keyId);
+    try {
+      // Note: In production, you'd use proper auth here
+      // await deleteKey(keyId, authToken);
+      alert("Key deletion requires authentication. This feature will be available after implementing user sessions.");
+    } finally {
+      setDeletingKeyId(null);
+    }
   };
 
   // SDK Code Examples
@@ -258,8 +467,8 @@ else:
     # Safe to proceed
     agent.execute_transaction()`;
 
-  const curlCode = `curl -X POST https://api.kyvern.network/v1/analyze \\
-  -H "Authorization: Bearer sk_live_kyvern_xxxxx" \\
+  const curlCode = `curl -X POST https://api.kyvernlabs.com/api/v1/analysis/intent \\
+  -H "X-API-Key: sk_live_kyvern_xxxxx" \\
   -H "Content-Type: application/json" \\
   -d '{
     "agent_id": "your-agent-id",
@@ -270,8 +479,22 @@ else:
 
   return (
     <div className="min-h-screen bg-[#050505]">
+      {/* New Key Modal */}
+      {newlyCreatedKey && (
+        <NewKeyModal secretKey={newlyCreatedKey} onClose={clearNewKey} />
+      )}
+
+      {/* Create Key Modal */}
+      {showCreateModal && (
+        <CreateKeyModal
+          onSubmit={handleCreateKey}
+          onClose={() => setShowCreateModal(false)}
+          isLoading={isLoading}
+        />
+      )}
+
       {/* Header */}
-      <header className="border-b border-white/10 bg-[#050505]/95 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-white/10 bg-[#050505]/95 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link href="https://kyvernlabs.com" className="flex items-center gap-2">
@@ -341,7 +564,7 @@ else:
                   <Key className="w-4 h-4 text-emerald-500" />
                   <h2 className="text-sm font-semibold text-white">API Keys</h2>
                 </div>
-                <span className="text-xs text-gray-500">{apiKeys.length} active</span>
+                <span className="text-xs text-gray-500">{keys.length} active</span>
               </div>
 
               <div className="p-4 space-y-4">
@@ -353,27 +576,44 @@ else:
                   </p>
                 </div>
 
+                {/* Error Display */}
+                {error && (
+                  <div className="flex items-start gap-3 p-3 bg-red-500/5 border border-red-500/20">
+                    <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-red-200/80 leading-relaxed">{error}</p>
+                  </div>
+                )}
+
                 {/* Keys List */}
                 <div className="space-y-3">
-                  {apiKeys.map((key) => (
-                    <APIKeyCard
-                      key={key.id}
-                      apiKey={key}
-                      isRevealed={revealedKeys.has(key.id)}
-                      onReveal={() => toggleReveal(key.id)}
-                      onDelete={() => deleteKey(key.id)}
-                    />
-                  ))}
+                  {keys.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Key className="w-8 h-8 text-gray-600 mx-auto mb-3" />
+                      <p className="text-sm text-gray-500">No API keys yet</p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Create your first key to get started
+                      </p>
+                    </div>
+                  ) : (
+                    keys.map((key) => (
+                      <APIKeyCard
+                        key={key.id}
+                        apiKey={key}
+                        onDelete={() => handleDeleteKey(key.id)}
+                        isDeleting={deletingKeyId === key.id}
+                      />
+                    ))
+                  )}
                 </div>
 
                 {/* Generate Button */}
                 <button
-                  onClick={generateNewKey}
-                  disabled={isGenerating}
+                  onClick={() => setShowCreateModal(true)}
+                  disabled={isLoading}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white text-black text-sm font-semibold hover:bg-gray-100 transition-colors disabled:opacity-50"
                 >
                   <Plus className="w-4 h-4" />
-                  {isGenerating ? "Generating..." : "Generate New Key"}
+                  Generate New Key
                 </button>
               </div>
             </div>
@@ -383,9 +623,9 @@ else:
               <h3 className="text-sm font-semibold text-white mb-4">This Month</h3>
               <div className="space-y-4">
                 {[
-                  { label: "API Calls", value: "12,847" },
-                  { label: "Blocked Threats", value: "23" },
-                  { label: "Avg. Latency", value: "45ms" },
+                  { label: "API Calls", value: "—" },
+                  { label: "Blocked Threats", value: "—" },
+                  { label: "Avg. Latency", value: "—" },
                 ].map((stat) => (
                   <div key={stat.label} className="flex items-center justify-between">
                     <span className="text-sm text-gray-500">{stat.label}</span>

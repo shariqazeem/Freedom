@@ -31,8 +31,13 @@ class Settings(BaseSettings):
         "https://shield.kyvernlabs.com",
     ]
 
-    # Database
+    # Database (Legacy - PostgreSQL direct connection)
     database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/kyvern_shield"
+
+    # Supabase (Primary database for API keys)
+    supabase_url: str = ""  # e.g., https://xxxxx.supabase.co
+    supabase_service_key: str = ""  # Service role key (bypasses RLS)
+    supabase_anon_key: str = ""  # Anonymous key (for client-side, respects RLS)
 
     # Redis
     redis_url: str = "redis://localhost:6379/0"

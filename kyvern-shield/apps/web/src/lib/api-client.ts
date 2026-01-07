@@ -101,6 +101,36 @@ export interface RogueAgentScenario {
 }
 
 // =============================================================================
+// API KEY TYPES
+// =============================================================================
+
+export interface APIKeyInfo {
+  id: string;
+  name: string;
+  key_prefix: string;
+  created_at: string;
+  last_used_at: string | null;
+}
+
+export interface CreateAPIKeyRequest {
+  name: string;
+  email: string;
+}
+
+export interface CreateAPIKeyResponse {
+  id: string;
+  name: string;
+  key: string;  // The raw key - only shown once!
+  key_prefix: string;
+  message: string;
+}
+
+export interface ListAPIKeysResponse {
+  keys: APIKeyInfo[];
+  total: number;
+}
+
+// =============================================================================
 // API CLIENT CLASS
 // =============================================================================
 
@@ -201,6 +231,63 @@ class ShieldAPIClient {
     return this.request("/api/v1/analysis/blacklist", {
       method: "POST",
       body: JSON.stringify(entry),
+    });
+  }
+
+  // ===========================================================================
+  // API KEY MANAGEMENT
+  // ===========================================================================
+
+  /**
+   * Create a new API key.
+   * Returns the raw key ONLY ONCE - must be saved immediately.
+   */
+  async createApiKey(name: string, email: string): Promise<CreateAPIKeyResponse> {
+    return this.request<CreateAPIKeyResponse>("/api/v1/auth/keys", {
+      method: "POST",
+      body: JSON.stringify({ name, email }),
+    });
+  }
+
+  /**
+   * List all API keys for the authenticated user.
+   * Requires X-API-Key header.
+   */
+  async listApiKeys(apiKey: string): Promise<ListAPIKeysResponse> {
+    return this.request<ListAPIKeysResponse>("/api/v1/auth/keys", {
+      headers: {
+        "X-API-Key": apiKey,
+      },
+    });
+  }
+
+  /**
+   * Delete (revoke) an API key.
+   * Requires X-API-Key header.
+   */
+  async deleteApiKey(keyId: string, apiKey: string): Promise<{ status: string; key_id: string; message: string }> {
+    return this.request(`/api/v1/auth/keys/${keyId}`, {
+      method: "DELETE",
+      headers: {
+        "X-API-Key": apiKey,
+      },
+    });
+  }
+
+  /**
+   * Get info about the current API key.
+   * Requires X-API-Key header.
+   */
+  async getCurrentKeyInfo(apiKey: string): Promise<{
+    key_id: string;
+    key_name: string;
+    key_prefix: string;
+    user_id: string;
+  }> {
+    return this.request("/api/v1/auth/keys/me", {
+      headers: {
+        "X-API-Key": apiKey,
+      },
     });
   }
 
@@ -376,4 +463,74 @@ export function useTransactionFeed(pollingInterval = 5000) {
   }, [pollingInterval]);
 
   return { transactions, addTransaction, isConnected };
+}
+
+/**
+ * Hook for API key management.
+ */
+export function useAPIKeys(email: string) {
+  const [keys, setKeys] = useState<APIKeyInfo[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
+
+  // Create a new API key
+  const createKey = useCallback(async (name: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await shieldAPI.createApiKey(name, email);
+      // Store the raw key to show in modal
+      setNewlyCreatedKey(response.key);
+      // Add to local list (without the raw key)
+      setKeys((prev) => [
+        {
+          id: response.id,
+          name: response.name,
+          key_prefix: response.key_prefix,
+          created_at: new Date().toISOString(),
+          last_used_at: null,
+        },
+        ...prev,
+      ]);
+      return response;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to create key";
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [email]);
+
+  // Clear the newly created key (after user has copied it)
+  const clearNewKey = useCallback(() => {
+    setNewlyCreatedKey(null);
+  }, []);
+
+  // Delete an API key (requires an existing key for auth)
+  const deleteKey = useCallback(async (keyId: string, authKey: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      await shieldAPI.deleteApiKey(keyId, authKey);
+      setKeys((prev) => prev.filter((k) => k.id !== keyId));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to delete key";
+      setError(message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  return {
+    keys,
+    isLoading,
+    error,
+    createKey,
+    deleteKey,
+    newlyCreatedKey,
+    clearNewKey,
+  };
 }
