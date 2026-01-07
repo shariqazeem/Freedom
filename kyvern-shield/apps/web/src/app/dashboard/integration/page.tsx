@@ -384,7 +384,7 @@ export default function IntegrationPage() {
     isLoading,
     error,
     createKey,
-    deleteKey,
+    deleteKey: _deleteKey, // TODO: Implement after adding user sessions
     newlyCreatedKey,
     clearNewKey,
   } = useAPIKeys(USER_EMAIL);
