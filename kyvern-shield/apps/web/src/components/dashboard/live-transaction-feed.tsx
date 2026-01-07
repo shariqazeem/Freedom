@@ -43,7 +43,7 @@ function RiskScoreBar({ score }: { score: number }) {
 
   return (
     <div className="flex items-center gap-3 min-w-[120px]">
-      <div className="flex-1 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+      <div className="flex-1 h-1.5 bg-white/10 overflow-hidden">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${score}%` }}
@@ -104,9 +104,9 @@ function TransactionRow({
         opacity: { duration: 0.3 },
       }}
       className={`
-        relative border-b border-zinc-800/50 overflow-hidden
+        relative border-b border-white/5 overflow-hidden
         ${isBlocked ? "bg-red-950/20" : "bg-transparent"}
-        hover:bg-zinc-900/50 transition-colors duration-200
+        hover:bg-white/[0.02] transition-colors duration-200
       `}
     >
       {/* Scanline effect for new items */}
@@ -134,7 +134,7 @@ function TransactionRow({
       <div className="flex items-center gap-4 px-4 py-3 pl-6">
         {/* Timestamp */}
         <div className="w-24 flex-shrink-0">
-          <span className="font-mono text-[11px] text-zinc-500">
+          <span className="font-mono text-[11px] text-gray-500">
             {new Date(event.timestamp).toLocaleTimeString("en-US", {
               hour12: false,
               hour: "2-digit",
@@ -142,7 +142,7 @@ function TransactionRow({
               second: "2-digit",
             })}
           </span>
-          <span className="font-mono text-[10px] text-zinc-600 ml-0.5">
+          <span className="font-mono text-[10px] text-gray-600 ml-0.5">
             .{new Date(event.timestamp).getMilliseconds().toString().padStart(3, "0").slice(0, 2)}
           </span>
         </div>
@@ -150,7 +150,7 @@ function TransactionRow({
         {/* Status Icon */}
         <div className="w-8 flex-shrink-0">
           <div
-            className={`w-7 h-7 rounded flex items-center justify-center ${
+            className={`w-7 h-7 flex items-center justify-center ${
               isBlocked
                 ? "bg-red-950/50 border border-red-900/50"
                 : "bg-emerald-950/50 border border-emerald-900/50"
@@ -166,7 +166,7 @@ function TransactionRow({
 
         {/* Request ID */}
         <div className="w-32 flex-shrink-0">
-          <span className="font-mono text-xs text-zinc-400">
+          <span className="font-mono text-xs text-gray-400">
             {truncateHash(event.request_id)}
           </span>
         </div>
@@ -175,7 +175,7 @@ function TransactionRow({
         <div className="w-24 flex-shrink-0">
           <span
             className={`
-              inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider
+              inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider
               ${
                 isBlocked
                   ? "bg-red-950/50 text-red-500 border border-red-900/30"
@@ -190,7 +190,7 @@ function TransactionRow({
         {/* Sandbox Flag */}
         <div className="w-20 flex-shrink-0">
           {hasSandbox && (
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-amber-950/50 text-amber-500 border border-amber-900/30">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-amber-950/50 text-amber-500 border border-amber-900/30">
               <AlertTriangle className="w-2.5 h-2.5" />
               SANDBOX
             </span>
@@ -199,10 +199,10 @@ function TransactionRow({
 
         {/* Analysis Time */}
         <div className="w-20 flex-shrink-0 text-right">
-          <span className="font-mono text-[11px] text-zinc-500">
+          <span className="font-mono text-[11px] text-gray-500">
             {event.analysis_time_ms.toFixed(1)}
           </span>
-          <span className="font-mono text-[10px] text-zinc-600 ml-0.5">ms</span>
+          <span className="font-mono text-[10px] text-gray-600 ml-0.5">ms</span>
         </div>
 
         {/* Risk Score Bar */}
@@ -233,39 +233,39 @@ function TransactionRow({
 
 function FeedHeader() {
   return (
-    <div className="flex items-center gap-4 px-4 py-2 border-b border-zinc-800 bg-zinc-950/80 pl-6">
+    <div className="flex items-center gap-4 px-4 py-2 border-b border-white/10 bg-[#050505]/80 pl-6">
       <div className="w-24 flex-shrink-0">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-600">
+        <span className="text-[10px] uppercase tracking-wider text-gray-600">
           Timestamp
         </span>
       </div>
       <div className="w-8 flex-shrink-0">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-600">
+        <span className="text-[10px] uppercase tracking-wider text-gray-600">
           St
         </span>
       </div>
       <div className="w-32 flex-shrink-0">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-600">
+        <span className="text-[10px] uppercase tracking-wider text-gray-600">
           Request ID
         </span>
       </div>
       <div className="w-24 flex-shrink-0">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-600">
+        <span className="text-[10px] uppercase tracking-wider text-gray-600">
           Decision
         </span>
       </div>
       <div className="w-20 flex-shrink-0">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-600">
+        <span className="text-[10px] uppercase tracking-wider text-gray-600">
           Flags
         </span>
       </div>
       <div className="w-20 flex-shrink-0 text-right">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-600">
+        <span className="text-[10px] uppercase tracking-wider text-gray-600">
           Latency
         </span>
       </div>
       <div className="flex-1 min-w-[140px]">
-        <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-600">
+        <span className="text-[10px] uppercase tracking-wider text-gray-600">
           Risk Score
         </span>
       </div>
@@ -296,7 +296,7 @@ function StatsBar({
       : 0;
 
   return (
-    <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-800 bg-zinc-900/50">
+    <div className="flex items-center justify-between px-4 py-2 border-b border-white/10 bg-[#0a0a0a]">
       <div className="flex items-center gap-6">
         <div className="flex items-center gap-2">
           {isLoading ? (
@@ -315,29 +315,29 @@ function StatsBar({
           ) : (
             <div className="w-2 h-2 rounded-full bg-red-500" />
           )}
-          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">
+          <span className="text-[10px] uppercase tracking-wider text-gray-500">
             {isLoading ? "Connecting..." : isConnected ? "Live Feed" : error || "Disconnected"}
           </span>
         </div>
-        <div className="h-4 w-px bg-zinc-800" />
-        <div className="flex items-center gap-4 font-mono text-[11px]">
+        <div className="h-4 w-px bg-white/10" />
+        <div className="flex items-center gap-4 text-[11px]">
           <div>
-            <span className="text-zinc-600">Allowed: </span>
+            <span className="text-gray-600">Allowed: </span>
             <span className="text-emerald-500 font-bold">{allowed}</span>
           </div>
           <div>
-            <span className="text-zinc-600">Blocked: </span>
+            <span className="text-gray-600">Blocked: </span>
             <span className="text-red-500 font-bold">{blocked}</span>
           </div>
           <div>
-            <span className="text-zinc-600">Avg: </span>
-            <span className="text-zinc-400">{avgLatency.toFixed(1)}ms</span>
+            <span className="text-gray-600">Avg: </span>
+            <span className="text-gray-400">{avgLatency.toFixed(1)}ms</span>
           </div>
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <Activity className="w-3 h-3 text-zinc-600" />
-        <span className="font-mono text-[10px] text-zinc-500">
+        <Activity className="w-3 h-3 text-gray-600" />
+        <span className="text-[10px] text-gray-500">
           {events.length} events
         </span>
       </div>
@@ -416,24 +416,24 @@ export function LiveTransactionFeed({
   }, [fetchTransactions, pollingInterval]);
 
   return (
-    <div className="h-full flex flex-col bg-zinc-950 border border-zinc-800 rounded-lg overflow-hidden">
+    <div className="h-full flex flex-col bg-[#050505] border border-white/10 overflow-hidden">
       {/* Panel Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800 bg-zinc-900/80">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[#0a0a0a]">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded bg-emerald-950/50 border border-emerald-900/30 flex items-center justify-center">
+          <div className="w-8 h-8 bg-emerald-950/50 border border-emerald-900/30 flex items-center justify-center">
             <Zap className="w-4 h-4 text-emerald-500" />
           </div>
           <div>
-            <h2 className="font-mono text-sm font-bold text-zinc-200 tracking-tight">
-              TRANSACTION ANALYSIS FEED
+            <h2 className="text-sm font-bold text-white tracking-tight">
+              Transaction Analysis Feed
             </h2>
-            <p className="font-mono text-[10px] text-zinc-600 mt-0.5">
+            <p className="text-[10px] text-gray-600 mt-0.5">
               Real-time Shield protection monitoring
             </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] text-zinc-600 uppercase tracking-wider">
+          <span className="text-[10px] text-gray-600 uppercase tracking-wider">
             Kyvern Shield v0.1
           </span>
         </div>
@@ -458,18 +458,18 @@ export function LiveTransactionFeed({
         </AnimatePresence>
 
         {events.length === 0 && (
-          <div className="flex items-center justify-center h-32 text-zinc-600">
-            <span className="font-mono text-sm">Awaiting transactions...</span>
+          <div className="flex items-center justify-center h-32 text-gray-600">
+            <span className="text-sm">Awaiting transactions...</span>
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-2 border-t border-zinc-800 bg-zinc-900/50 flex items-center justify-between">
-        <span className="font-mono text-[10px] text-zinc-600">
+      <div className="px-4 py-2 border-t border-white/10 bg-[#0a0a0a] flex items-center justify-between">
+        <span className="text-[10px] text-gray-600">
           {events.filter((e) => e.decision === "block").length} threats blocked
         </span>
-        <span className="font-mono text-[10px] text-zinc-600">
+        <span className="text-[10px] text-gray-600">
           UTC {new Date().toISOString().slice(11, 19)}
         </span>
       </div>

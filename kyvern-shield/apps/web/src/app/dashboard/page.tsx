@@ -1,17 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import {
   Shield,
-  Settings,
-  Bell,
-  User,
-  ChevronDown,
   Activity,
-  Clock,
-  Menu,
-  X,
+  ArrowUpRight,
 } from "lucide-react";
 
 import { LiveTransactionFeed } from "@/components/dashboard/live-transaction-feed";
@@ -19,114 +12,105 @@ import { CircuitBreakerPanel } from "@/components/dashboard/circuit-breaker-pane
 import { ThreatMap } from "@/components/dashboard/threat-map";
 
 // =============================================================================
-// HEADER COMPONENT
+// HEADER COMPONENT (Matching kyvernlabs design)
 // =============================================================================
 
 function DashboardHeader() {
-  const [menuOpen, setMenuOpen] = useState(false);
-
   return (
-    <header className="h-14 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur-sm flex items-center justify-between px-4 sticky top-0 z-50">
-      {/* Logo & Title */}
-      <div className="flex items-center gap-4">
-        <Link href="/" className="flex items-center gap-2">
-          <Shield className="w-5 h-5 text-emerald-500" />
-          <span className="font-mono font-bold text-sm tracking-wide text-zinc-200">KYVERN SHIELD</span>
-        </Link>
-        <div className="hidden md:block h-5 w-px bg-zinc-800" />
-        <span className="hidden md:block font-mono text-[10px] uppercase tracking-wider text-zinc-500">
-          Command Center
-        </span>
-      </div>
-
-      {/* Center Status */}
-      <div className="hidden md:flex items-center gap-6">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-emerald-500 status-glow-safe animate-pulse" />
-          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-500">
-            All Systems Operational
-          </span>
+    <header className="border-b border-white/10 bg-[#050505]/95 backdrop-blur-sm sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
+        {/* Logo & Title */}
+        <div className="flex items-center gap-4">
+          <Link href="https://kyvernlabs.com" className="flex items-center gap-2">
+            <Shield className="w-5 h-5 text-emerald-500" />
+            <span className="font-bold text-sm text-white tracking-tight">KYVERN SHIELD</span>
+          </Link>
+          <div className="h-5 w-px bg-white/10" />
+          <nav className="hidden md:flex items-center gap-6">
+            <Link
+              href="/dashboard"
+              className="text-sm text-white font-medium"
+            >
+              Monitor
+            </Link>
+            <Link
+              href="/dashboard/integration"
+              className="text-sm text-gray-500 hover:text-white transition-colors"
+            >
+              Integration
+            </Link>
+            <a
+              href="https://docs.kyvernlabs.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-gray-500 hover:text-white transition-colors flex items-center gap-1"
+            >
+              Docs
+              <ArrowUpRight className="w-3 h-3" />
+            </a>
+          </nav>
         </div>
-        <div className="flex items-center gap-2 font-mono text-[11px] text-zinc-500">
-          <Clock className="w-3 h-3" />
-          <span>{new Date().toLocaleTimeString("en-US", { hour12: false })}</span>
-        </div>
-      </div>
 
-      {/* Right Actions */}
-      <div className="flex items-center gap-2">
-        <button className="hidden md:flex p-2 rounded hover:bg-zinc-800/50 transition-colors relative">
-          <Bell className="w-4 h-4 text-zinc-500" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500" />
-        </button>
-        <button className="hidden md:flex p-2 rounded hover:bg-zinc-800/50 transition-colors">
-          <Settings className="w-4 h-4 text-zinc-500" />
-        </button>
-        <div className="hidden md:block h-5 w-px bg-zinc-800 mx-1" />
-        <button className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded hover:bg-zinc-800/50 transition-colors">
-          <div className="w-6 h-6 rounded bg-emerald-950/50 border border-emerald-900/30 flex items-center justify-center">
-            <User className="w-3.5 h-3.5 text-emerald-500" />
+        {/* Right - Status */}
+        <div className="flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs text-gray-500">All Systems Operational</span>
           </div>
-          <span className="font-mono text-xs text-zinc-300">Operator</span>
-          <ChevronDown className="w-3 h-3 text-zinc-600" />
-        </button>
-
-        {/* Mobile menu toggle */}
-        <button
-          className="md:hidden p-2 rounded hover:bg-zinc-800/50 transition-colors"
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          {menuOpen ? (
-            <X className="w-5 h-5 text-zinc-500" />
-          ) : (
-            <Menu className="w-5 h-5 text-zinc-500" />
-          )}
-        </button>
+          <a
+            href="https://kyvernlabs.com"
+            className="text-sm text-gray-500 hover:text-white transition-colors hidden md:block"
+          >
+            kyvernlabs.com
+          </a>
+        </div>
       </div>
     </header>
   );
 }
 
 // =============================================================================
-// STATUS BAR
+// STATUS BAR (Matching kyvernlabs design)
 // =============================================================================
 
 function StatusBar() {
   return (
-    <div className="h-8 border-b border-zinc-800 bg-zinc-900/50 flex items-center justify-between px-4">
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2">
-          <Activity className="w-3 h-3 text-zinc-600" />
-          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-600">
-            Network
-          </span>
-          <span className="font-mono text-[10px] text-emerald-500">Solana Mainnet</span>
+    <div className="border-b border-white/5 bg-[#0a0a0a]">
+      <div className="max-w-7xl mx-auto px-6 h-8 flex items-center justify-between">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <Activity className="w-3 h-3 text-gray-600" />
+            <span className="text-[10px] uppercase tracking-wider text-gray-600">
+              Network
+            </span>
+            <span className="text-[10px] text-emerald-500">Solana Mainnet</span>
+          </div>
+          <div className="hidden sm:flex items-center gap-2">
+            <span className="text-[10px] uppercase tracking-wider text-gray-600">
+              Block
+            </span>
+            <span className="text-[10px] text-gray-400">289,456,123</span>
+          </div>
+          <div className="hidden md:flex items-center gap-2">
+            <span className="text-[10px] uppercase tracking-wider text-gray-600">
+              TPS
+            </span>
+            <span className="text-[10px] text-gray-400">3,247</span>
+          </div>
         </div>
-        <div className="hidden sm:flex items-center gap-2">
-          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-600">
-            Block
-          </span>
-          <span className="font-mono text-[10px] text-zinc-400">289,456,123</span>
-        </div>
-        <div className="hidden md:flex items-center gap-2">
-          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-600">
-            TPS
-          </span>
-          <span className="font-mono text-[10px] text-zinc-400">3,247</span>
-        </div>
-      </div>
-      <div className="flex items-center gap-4">
-        <div className="hidden sm:flex items-center gap-2">
-          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-600">
-            Agents
-          </span>
-          <span className="font-mono text-[10px] text-emerald-500">7 Active</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-[10px] uppercase tracking-wider text-zinc-600">
-            Latency
-          </span>
-          <span className="font-mono text-[10px] text-emerald-500">12ms</span>
+        <div className="flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-2">
+            <span className="text-[10px] uppercase tracking-wider text-gray-600">
+              Agents
+            </span>
+            <span className="text-[10px] text-emerald-500">7 Active</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] uppercase tracking-wider text-gray-600">
+              Latency
+            </span>
+            <span className="text-[10px] text-emerald-500">12ms</span>
+          </div>
         </div>
       </div>
     </div>
@@ -134,12 +118,12 @@ function StatusBar() {
 }
 
 // =============================================================================
-// MAIN DASHBOARD PAGE
+// MAIN DASHBOARD PAGE (Matching kyvernlabs design)
 // =============================================================================
 
 export default function DashboardPage() {
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col">
+    <div className="min-h-screen bg-[#050505] flex flex-col">
       {/* Header */}
       <DashboardHeader />
 
@@ -147,42 +131,47 @@ export default function DashboardPage() {
       <StatusBar />
 
       {/* Main Grid Layout */}
-      <main className="flex-1 p-4 overflow-hidden">
-        <div className="h-full grid grid-cols-1 lg:grid-cols-12 gap-4">
-          {/* Left Column - Transaction Feed */}
-          <div className="lg:col-span-7 xl:col-span-8 h-[600px] lg:h-full">
-            <LiveTransactionFeed pollingInterval={2000} />
-          </div>
-
-          {/* Right Column - Map & Circuit Breaker */}
-          <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-4 h-auto lg:h-full">
-            {/* Threat Map */}
-            <div className="h-[350px] lg:h-[45%] lg:min-h-[300px]">
-              <ThreatMap />
+      <main className="flex-1 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 py-6 h-full">
+          <div className="h-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left Column - Transaction Feed */}
+            <div className="lg:col-span-7 xl:col-span-8 h-[600px] lg:h-full">
+              <LiveTransactionFeed pollingInterval={2000} />
             </div>
 
-            {/* Circuit Breaker */}
-            <div className="h-[500px] lg:flex-1 lg:min-h-[350px]">
-              <CircuitBreakerPanel />
+            {/* Right Column - Map & Circuit Breaker */}
+            <div className="lg:col-span-5 xl:col-span-4 flex flex-col gap-6 h-auto lg:h-full">
+              {/* Threat Map */}
+              <div className="h-[350px] lg:h-[45%] lg:min-h-[300px]">
+                <ThreatMap />
+              </div>
+
+              {/* Circuit Breaker */}
+              <div className="h-[500px] lg:flex-1 lg:min-h-[350px]">
+                <CircuitBreakerPanel />
+              </div>
             </div>
           </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="h-8 border-t border-zinc-800 bg-zinc-900/50 flex items-center justify-between px-4">
-        <div className="flex items-center gap-4">
-          <span className="font-mono text-[10px] text-zinc-600">
-            Kyvern Shield v0.1.0
-          </span>
-          <span className="hidden sm:inline font-mono text-[10px] text-zinc-700">|</span>
-          <span className="hidden sm:inline font-mono text-[10px] text-zinc-600">
-            Secure. Monitor. Protect.
-          </span>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="font-mono text-[10px] text-zinc-600">
-            UTC {new Date().toISOString().slice(11, 19)}
+      <footer className="border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-6 h-10 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <span className="text-xs text-gray-600">
+              Kyvern Shield v0.1.0
+            </span>
+            <span className="hidden sm:inline text-xs text-gray-700">|</span>
+            <a
+              href="https://kyvernlabs.com"
+              className="hidden sm:inline text-xs text-gray-500 hover:text-white transition-colors"
+            >
+              kyvernlabs.com
+            </a>
+          </div>
+          <span className="text-xs text-gray-600">
+            Built by Kyvern Labs
           </span>
         </div>
       </footer>
