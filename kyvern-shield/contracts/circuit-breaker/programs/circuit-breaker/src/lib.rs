@@ -5,7 +5,7 @@
 
 use anchor_lang::prelude::*;
 
-declare_id!("CBrkr111111111111111111111111111111111111111");
+declare_id!("6sqKVnqGaXxxBejFWRrAWv62wAaGUDedDYvm1mx1yH7J");
 
 /// Maximum number of anomalies to track in history
 const MAX_ANOMALY_HISTORY: usize = 10;
@@ -49,7 +49,7 @@ pub mod circuit_breaker {
         new_config: ShieldConfig,
     ) -> Result<()> {
         let shield = &mut ctx.accounts.shield;
-        shield.config = new_config;
+        shield.config = new_config.clone();
 
         emit!(ConfigUpdated {
             shield: shield.key(),
