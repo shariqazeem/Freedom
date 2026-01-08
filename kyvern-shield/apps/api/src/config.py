@@ -60,10 +60,15 @@ class Settings(BaseSettings):
     anomaly_detection_threshold: float = 0.85
     max_transaction_analysis_batch: int = 100
 
-    # Ollama LLM
+    # Ollama LLM (Legacy - replaced by Gemini)
     ollama_base_url: str = "http://localhost:11434"
     ollama_model: str = "llama3"
     ollama_timeout: float = 30.0
+
+    # Gemini LLM (Primary)
+    gemini_api_key: str = ""
+    gemini_model: str = "gemini-1.5-flash"  # Fast and free tier friendly
+    llm_provider: str = "gemini"  # "gemini" or "ollama"
 
     # Shield Analysis
     max_transaction_amount_sol: float = 10.0
