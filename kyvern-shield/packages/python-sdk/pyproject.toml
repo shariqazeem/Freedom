@@ -1,7 +1,7 @@
 [project]
 name = "kyvern-shield"
 version = "0.1.0"
-description = "Official Python SDK for Kyvern Shield - Transaction security for AI agents"
+description = "Sovereign AI Security SDK - Protect AI agents from prompt injection and wallet drains"
 authors = [{ name = "Kyvern Labs", email = "hello@kyvernlabs.com" }]
 readme = "README.md"
 requires-python = ">=3.9"
