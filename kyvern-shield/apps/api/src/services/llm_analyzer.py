@@ -36,7 +36,7 @@ class LLMConfig:
     # Common settings
     timeout: float = 30.0
     temperature: float = 0.1
-    max_tokens: int = 500
+    max_tokens: int = 1024
 
 
 ANALYSIS_PROMPT_TEMPLATE = """You are a security analyst for an AI agent transaction monitoring system.
@@ -307,15 +307,26 @@ class LLMAnalyzer:
     def _parse_llm_response(self, raw_response: str) -> LLMAnalysisResult:
         """Parse the LLM's JSON response."""
         try:
-            # Extract JSON from response
-            json_match = re.search(r'\{[^{}]*\}', raw_response, re.DOTALL)
-            if not json_match:
-                return self._fallback_result(
-                    "Could not parse LLM response",
-                    raw_response=raw_response,
-                )
+            # Strip markdown code blocks if present (```json ... ```)
+            cleaned = raw_response.strip()
+            if cleaned.startswith("```"):
+                # Remove opening ```json or ```
+                cleaned = re.sub(r'^```(?:json)?\s*\n?', '', cleaned)
+                # Remove closing ```
+                cleaned = re.sub(r'\n?```\s*$', '', cleaned)
 
-            parsed = json.loads(json_match.group())
+            # Try to parse the cleaned response directly first
+            try:
+                parsed = json.loads(cleaned)
+            except json.JSONDecodeError:
+                # Fall back to extracting JSON object with nested braces
+                json_match = re.search(r'\{(?:[^{}]|\{[^{}]*\})*\}', cleaned, re.DOTALL)
+                if not json_match:
+                    return self._fallback_result(
+                        "Could not parse LLM response",
+                        raw_response=raw_response,
+                    )
+                parsed = json.loads(json_match.group())
 
             return LLMAnalysisResult(
                 risk_score=min(100, max(0, int(parsed.get("risk_score", 50)))),
