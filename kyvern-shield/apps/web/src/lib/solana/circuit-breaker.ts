@@ -108,7 +108,7 @@ export async function fetchShieldData(
     const maxTransactionValue = Number(data.readBigUInt64LE(64));
     const dailySpendLimit = Number(data.readBigUInt64LE(72));
     const approvalThreshold = Number(data.readBigUInt64LE(80));
-    const anomalyThreshold = data[88];
+    const anomalyThreshold = data[88] ?? 3;
     // Skip timeWindowSeconds at offset 89
     const cooldownSeconds = Number(data.readBigInt64LE(97));
 
