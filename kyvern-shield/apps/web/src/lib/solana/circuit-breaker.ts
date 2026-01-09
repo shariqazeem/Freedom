@@ -109,7 +109,7 @@ export async function fetchShieldData(
     const dailySpendLimit = Number(data.readBigUInt64LE(72));
     const approvalThreshold = Number(data.readBigUInt64LE(80));
     const anomalyThreshold = data[88];
-    const timeWindowSeconds = Number(data.readBigInt64LE(89));
+    // Skip timeWindowSeconds at offset 89
     const cooldownSeconds = Number(data.readBigInt64LE(97));
 
     // After config (skip allowed/blocked program vecs for now)
