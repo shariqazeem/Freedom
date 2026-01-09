@@ -115,8 +115,8 @@ export async function fetchShieldData(
     // After config (skip allowed/blocked program vecs for now)
     // State and counters are after the config struct
     const stateOffset = 105 + (4 + 32 * 10) + (4 + 32 * 10); // After vecs
-    const state = parseCircuitState(data[stateOffset]);
-    const anomalyCount = data[stateOffset + 1];
+    const state = parseCircuitState(data[stateOffset] ?? 0);
+    const anomalyCount = data[stateOffset + 1] ?? 0;
     const lastTriggeredAt = Number(data.readBigInt64LE(stateOffset + 2));
     const cooldownEndsAt = Number(data.readBigInt64LE(stateOffset + 10));
     const totalTransactions = Number(data.readBigUInt64LE(stateOffset + 18));
