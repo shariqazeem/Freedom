@@ -61,6 +61,7 @@ export function useCircuitBreaker(
   // Refs
   const connectionRef = useRef<Connection | null>(null);
   const subscriptionRef = useRef<number | null>(null);
+  const inDemoModeRef = useRef(false); // Prevents polling from overwriting simulated state
 
   // Initialize connection
   useEffect(() => {
@@ -74,6 +75,8 @@ export function useCircuitBreaker(
 
   // Fetch shield data
   const refreshState = useCallback(async () => {
+    // Don't overwrite simulated demo state
+    if (inDemoModeRef.current) return;
     if (!connectionRef.current) return;
 
     try {
@@ -173,6 +176,7 @@ export function useCircuitBreaker(
 
       // Update local state immediately for responsiveness
       if (result.circuitTriggered) {
+        inDemoModeRef.current = true; // Prevent polling from overwriting
         setCircuitState("open");
         setEvents((prev) => [
           {
@@ -184,9 +188,6 @@ export function useCircuitBreaker(
           ...prev,
         ]);
       }
-
-      // Refresh from chain
-      await refreshState();
     } catch (err) {
       console.error("Simulation error:", err);
       setError(err instanceof Error ? err.message : "Simulation failed");
@@ -214,6 +215,7 @@ export function useCircuitBreaker(
       }
 
       // Update local state
+      inDemoModeRef.current = false; // Allow polling again
       setCircuitState("closed");
       setEvents((prev) => [
         {
@@ -224,9 +226,6 @@ export function useCircuitBreaker(
         },
         ...prev,
       ]);
-
-      // Refresh from chain
-      await refreshState();
     } catch (err) {
       console.error("Reset error:", err);
       setError(err instanceof Error ? err.message : "Reset failed");
