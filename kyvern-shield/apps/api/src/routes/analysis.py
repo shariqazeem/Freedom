@@ -49,6 +49,8 @@ from src.models.intent import (
 )
 from src.services.analyzer import get_transaction_analyzer
 from src.services.source_detection import scan_for_indirect_injection
+from src.services.circuit_breaker import get_circuit_breaker, OnChainResult
+from src.config import settings
 
 logger = structlog.get_logger()
 
@@ -165,6 +167,48 @@ async def analyze_intent(
             risk_score=result.risk_score,
             analysis_time_ms=round(result.analysis_time_ms, 2),
         )
+
+        # On-chain recording (if enabled)
+        if settings.enable_onchain_recording:
+            try:
+                circuit_breaker = await get_circuit_breaker()
+
+                # Record the decision on-chain for trustless verification
+                # Convert request_id to bytes for signature field
+                sig_bytes = str(result.request_id).encode('utf-8')[:64].ljust(64, b'\0')
+
+                # Determine transaction value in lamports (1 SOL = 1B lamports)
+                value_lamports = int(intent.amount_sol * 1_000_000_000)
+
+                # Record on-chain (agent_wallet derived from agent_id for now)
+                onchain_result = await circuit_breaker.record_transaction(
+                    agent_wallet=str(intent.agent_id),  # Use agent_id as wallet identifier
+                    signature=sig_bytes,
+                    program_id="11111111111111111111111111111111",  # System program placeholder
+                    value=value_lamports,
+                    tx_type=1 if result.decision == AnalysisDecision.BLOCK else 0,
+                )
+
+                if onchain_result.success:
+                    logger.info(
+                        "Decision recorded on-chain",
+                        request_id=str(result.request_id),
+                        tx_signature=onchain_result.signature,
+                        shield_pda=onchain_result.shield_pda,
+                    )
+                else:
+                    logger.warning(
+                        "On-chain recording failed (non-critical)",
+                        request_id=str(result.request_id),
+                        error=onchain_result.error,
+                    )
+            except Exception as e:
+                # On-chain recording is optional - don't fail the request
+                logger.warning(
+                    "On-chain recording error (non-critical)",
+                    request_id=str(result.request_id),
+                    error=str(e),
+                )
 
         # Store for dashboard feed
         _store_transaction(result)

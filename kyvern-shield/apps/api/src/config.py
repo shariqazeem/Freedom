@@ -42,9 +42,12 @@ class Settings(BaseSettings):
     # Redis
     redis_url: str = "redis://localhost:6379/0"
 
-    # Solana
-    solana_rpc_url: str = "https://api.mainnet-beta.solana.com"
-    solana_ws_url: str = "wss://api.mainnet-beta.solana.com"
+    # Solana (Circuit Breaker Integration)
+    solana_rpc_url: str = "https://api.devnet.solana.com"
+    solana_ws_url: str = "wss://api.devnet.solana.com"
+    solana_authority_keypair: str = ""  # JSON array of keypair bytes
+    circuit_breaker_program_id: str = "6sqKVnqGaXxxBejFWRrAWv62wAaGUDedDYvm1mx1yH7J"
+    enable_onchain_recording: bool = True  # Record decisions on-chain
 
     # Security
     api_key_header: str = "X-API-Key"
