@@ -12,7 +12,11 @@ import {
   RefreshCw,
   ChevronRight,
   Activity,
+  Zap,
+  Loader2,
+  Skull,
 } from "lucide-react";
+import { useCircuitBreaker } from "@/hooks/useCircuitBreaker";
 
 // =============================================================================
 // TYPES
@@ -42,18 +46,18 @@ interface AgentStatus {
 // CIRCUIT STATE INDICATOR
 // =============================================================================
 
-function CircuitStateIndicator({ state }: { state: CircuitState }) {
+function CircuitStateIndicator({ state, isAnimating }: { state: CircuitState; isAnimating?: boolean }) {
   const config = {
     closed: {
       label: "CLOSED",
-      sublabel: "Normal Operation",
+      sublabel: "System Operational",
       color: "emerald",
       icon: Shield,
       glow: "status-glow-safe",
     },
     open: {
       label: "OPEN",
-      sublabel: "Circuit Tripped",
+      sublabel: "THREAT DETECTED",
       color: "red",
       icon: Ban,
       glow: "status-glow-critical",
@@ -72,20 +76,56 @@ function CircuitStateIndicator({ state }: { state: CircuitState }) {
   return (
     <div className="flex items-center gap-4">
       <div className={`relative w-16 h-16 rounded-sm bg-${color}-500/10 flex items-center justify-center ${glow}`}>
-        <Icon className={`w-8 h-8 text-${color}-500`} />
+        <Icon className={`w-8 h-8 text-${color}-500 ${isAnimating ? 'animate-pulse' : ''}`} />
         {state === "open" && (
           <motion.div
             className="absolute inset-0 rounded-sm border-2 border-red-500"
-            animate={{ opacity: [1, 0.3, 1] }}
-            transition={{ duration: 1, repeat: Infinity }}
+            animate={{ opacity: [1, 0.3, 1], scale: [1, 1.05, 1] }}
+            transition={{ duration: 0.5, repeat: Infinity }}
           />
         )}
       </div>
       <div>
         <div className={`text-lg font-bold font-mono text-${color}-500`}>{label}</div>
-        <div className="text-[11px] text-muted-foreground">{sublabel}</div>
+        <div className={`text-[11px] ${state === 'open' ? 'text-red-400 font-semibold' : 'text-muted-foreground'}`}>
+          {sublabel}
+        </div>
       </div>
     </div>
+  );
+}
+
+// =============================================================================
+// ATTACK ALERT OVERLAY
+// =============================================================================
+
+function AttackAlert({ reason, onDismiss }: { reason: string; onDismiss: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className="absolute inset-0 z-50 bg-red-950/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 rounded-sm"
+    >
+      <motion.div
+        animate={{ scale: [1, 1.1, 1] }}
+        transition={{ duration: 0.5, repeat: Infinity }}
+        className="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mb-4"
+      >
+        <Skull className="w-10 h-10 text-red-500" />
+      </motion.div>
+      <h3 className="text-2xl font-bold text-red-500 font-mono mb-2">CIRCUIT OPEN</h3>
+      <p className="text-red-300 text-center text-sm mb-4">THREAT DETECTED & BLOCKED</p>
+      <div className="bg-red-500/10 border border-red-500/30 rounded-sm p-3 mb-6 max-w-xs">
+        <p className="text-red-200 text-xs text-center font-mono">{reason}</p>
+      </div>
+      <button
+        onClick={onDismiss}
+        className="px-6 py-2 bg-red-500 text-white text-sm font-medium rounded-sm hover:bg-red-600 transition-colors"
+      >
+        Acknowledge
+      </button>
+    </motion.div>
   );
 }
 
@@ -227,7 +267,19 @@ function MetricCard({
 // =============================================================================
 
 export function CircuitBreakerPanel() {
-  const [circuitState, setCircuitState] = useState<CircuitState>("closed");
+  const {
+    circuitState,
+    shieldData,
+    isLoading,
+    error,
+    events,
+    isSimulating,
+    simulateAttack,
+    resetCircuit,
+  } = useCircuitBreaker();
+
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertReason, setAlertReason] = useState("");
   const [rules, setRules] = useState<Rule[]>([
     {
       id: "max_tx_value",
@@ -276,7 +328,7 @@ export function CircuitBreakerPanel() {
   ]);
 
   const [agents] = useState<AgentStatus[]>([
-    { id: "1", name: "Alpha-7", state: "closed", anomalyCount: 0, lastTransaction: new Date() },
+    { id: "1", name: "Alpha-7", state: circuitState, anomalyCount: 0, lastTransaction: new Date() },
     { id: "2", name: "Sentinel-3", state: "closed", anomalyCount: 2, lastTransaction: new Date() },
     { id: "3", name: "Trader-X9", state: "half_open", anomalyCount: 4, lastTransaction: new Date() },
     { id: "4", name: "Vault-01", state: "closed", anomalyCount: 0, lastTransaction: new Date() },
@@ -290,16 +342,35 @@ export function CircuitBreakerPanel() {
     );
   };
 
-  const triggerCircuitBreaker = () => {
-    setCircuitState("open");
+  const handleSimulateAttack = async () => {
+    try {
+      await simulateAttack(1000); // Simulate 1000 SOL transfer
+      setAlertReason("Blocked: 1000 SOL transfer attempt exceeds 10 SOL limit");
+      setShowAlert(true);
+    } catch (err) {
+      console.error("Attack simulation failed:", err);
+    }
   };
 
-  const resetCircuitBreaker = () => {
-    setCircuitState("closed");
+  const handleResetCircuit = async () => {
+    setShowAlert(false);
+    await resetCircuit();
   };
+
+  // Update agents state when circuit state changes
+  const displayAgents = agents.map((agent, idx) =>
+    idx === 0 ? { ...agent, state: circuitState } : agent
+  );
 
   return (
-    <div className="panel h-full flex flex-col overflow-hidden">
+    <div className="panel h-full flex flex-col overflow-hidden relative">
+      {/* Attack Alert Overlay */}
+      <AnimatePresence>
+        {showAlert && circuitState === "open" && (
+          <AttackAlert reason={alertReason} onDismiss={() => setShowAlert(false)} />
+        )}
+      </AnimatePresence>
+
       {/* Panel Header */}
       <div className="panel-header">
         <div className="flex items-center gap-3">
@@ -309,7 +380,7 @@ export function CircuitBreakerPanel() {
           <div>
             <h2 className="panel-title">Circuit Breaker Control</h2>
             <p className="text-[10px] text-muted-foreground/60 mt-0.5">
-              Emergency protection system
+              On-chain protection • Solana Devnet
             </p>
           </div>
         </div>
@@ -317,25 +388,39 @@ export function CircuitBreakerPanel() {
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         {/* Main Circuit State */}
-        <div className="p-6 rounded-sm border border-border bg-black/40">
+        <div className={`p-6 rounded-sm border ${
+          circuitState === "open"
+            ? "border-red-500/50 bg-red-950/30"
+            : "border-border bg-black/40"
+        } transition-colors`}>
           <div className="flex items-center justify-between">
-            <CircuitStateIndicator state={circuitState} />
+            <CircuitStateIndicator state={circuitState} isAnimating={isSimulating} />
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-2">
               {circuitState === "closed" ? (
                 <button
-                  onClick={triggerCircuitBreaker}
-                  className="px-4 py-2 bg-red-500/10 border border-red-500/30 text-red-500 text-sm font-medium rounded-sm hover:bg-red-500/20 transition-colors flex items-center gap-2"
+                  onClick={handleSimulateAttack}
+                  disabled={isSimulating}
+                  className="px-4 py-2 bg-amber-500/10 border border-amber-500/30 text-amber-500 text-sm font-medium rounded-sm hover:bg-amber-500/20 transition-colors flex items-center gap-2 disabled:opacity-50"
                 >
-                  <AlertTriangle className="w-4 h-4" />
-                  Emergency Trip
+                  {isSimulating ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Zap className="w-4 h-4" />
+                  )}
+                  Simulate Attack
                 </button>
               ) : (
                 <button
-                  onClick={resetCircuitBreaker}
-                  className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-sm font-medium rounded-sm hover:bg-emerald-500/20 transition-colors flex items-center gap-2"
+                  onClick={handleResetCircuit}
+                  disabled={isSimulating}
+                  className="px-4 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-500 text-sm font-medium rounded-sm hover:bg-emerald-500/20 transition-colors flex items-center gap-2 disabled:opacity-50"
                 >
-                  <RefreshCw className="w-4 h-4" />
+                  {isSimulating ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
                   Reset Circuit
                 </button>
               )}
@@ -344,7 +429,7 @@ export function CircuitBreakerPanel() {
 
           {/* Warning when open */}
           <AnimatePresence>
-            {circuitState === "open" && (
+            {circuitState === "open" && !showAlert && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
@@ -363,6 +448,13 @@ export function CircuitBreakerPanel() {
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Error display */}
+          {error && (
+            <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/20 rounded-sm">
+              <p className="text-[11px] text-amber-400">{error}</p>
+            </div>
+          )}
         </div>
 
         {/* Metrics Grid */}
@@ -375,14 +467,14 @@ export function CircuitBreakerPanel() {
           />
           <MetricCard
             label="Blocked Today"
-            value="23"
+            value={shieldData?.blockedTransactions || 23}
             delta="+12"
             icon={Ban}
             color="red-500"
           />
           <MetricCard
             label="Anomalies"
-            value="6"
+            value={shieldData?.anomalyCount || events.filter(e => e.type === "anomaly_detected").length}
             delta="+3"
             icon={AlertTriangle}
             color="amber-500"
@@ -417,19 +509,48 @@ export function CircuitBreakerPanel() {
             Agent Status
           </h3>
           <div className="border border-border rounded-sm bg-black/20">
-            {agents.map((agent) => (
+            {displayAgents.map((agent) => (
               <AgentStatusRow key={agent.id} agent={agent} />
             ))}
           </div>
         </div>
+
+        {/* Recent Events */}
+        {events.length > 0 && (
+          <div>
+            <h3 className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-3">
+              Recent Events
+            </h3>
+            <div className="space-y-2">
+              {events.slice(0, 5).map((event, idx) => (
+                <div
+                  key={idx}
+                  className={`p-2 rounded-sm border text-[11px] font-mono ${
+                    event.type === "triggered"
+                      ? "border-red-500/30 bg-red-500/5 text-red-400"
+                      : event.type === "reset"
+                      ? "border-emerald-500/30 bg-emerald-500/5 text-emerald-400"
+                      : "border-amber-500/30 bg-amber-500/5 text-amber-400"
+                  }`}
+                >
+                  {event.type.toUpperCase()} - {new Date(event.timestamp).toLocaleTimeString()}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Footer */}
       <div className="px-4 py-2 border-t border-border bg-black/20 flex items-center justify-between">
         <span className="text-[10px] text-muted-foreground">
-          Last updated: {new Date().toLocaleTimeString()}
+          {isLoading ? "Syncing..." : `Last updated: ${new Date().toLocaleTimeString()}`}
         </span>
-        <span className="text-[10px] text-emerald-500">● System Operational</span>
+        <span className={`text-[10px] ${
+          circuitState === "open" ? "text-red-500" : "text-emerald-500"
+        }`}>
+          ● {circuitState === "open" ? "THREAT BLOCKED" : "System Operational"}
+        </span>
       </div>
     </div>
   );
