@@ -7,10 +7,6 @@
 import {
   Connection,
   PublicKey,
-  Transaction,
-  TransactionInstruction,
-  SystemProgram,
-  Keypair,
 } from "@solana/web3.js";
 
 // Program ID deployed on devnet
