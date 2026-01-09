@@ -20,8 +20,8 @@ from typing import Optional
 import structlog
 from solana.rpc.async_api import AsyncClient
 from solana.rpc.commitment import Confirmed
-from solana.transaction import Transaction
 from solders.keypair import Keypair
+from solders.transaction import Transaction
 from solders.pubkey import Pubkey
 from solders.system_program import ID as SYSTEM_PROGRAM_ID
 from solders.instruction import Instruction, AccountMeta
